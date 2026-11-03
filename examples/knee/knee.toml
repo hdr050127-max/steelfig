@@ -1,0 +1,168 @@
+# Portal-frame knee at true size (the steelfig TOML format). Build with:
+#   steelfig build examples/knee/knee.toml /tmp/knee_out --report /tmp/knee_rep
+title = "West knee: what restrains the designed members"
+
+[[line]]                                   # rafter TOP line: 4 deg pitch from the column face at z = 6.0
+name = "roof"
+points = [[0.25, 6.0], [8.0, 6.542]]
+
+[[member]]
+name = "col"
+section = "460UB82.1"
+from = [0, 0, 2.5]
+to = "roof.at(0) + V(0, 0, 0.5)"
+up = [1, 0, 0]
+cut1 = ["roof.at(0)", "roof.normal(0)"]
+material = "accent"
+
+[[member]]
+name = "raf"
+section = "410UB59.7"
+from = "roof.at(0.25)"
+to = "roof.at(5.0)"
+up = "roof.normal(1)"
+align = "top"
+cut0 = ["roof.at(0.25)", [1, 0, 0]]
+
+[[plate]]
+name = "ep"
+centre = "roof.at(0.24) - roof.normal(1) * (sec('410UB59.7')['d'] / 2 - 0.02)"
+ex = [1, 0, 0]
+ey = [0, 1, 0]
+size = [0.02, 0.22, 0.57]
+
+[[bolts]]
+name = "kb"
+centre = "roof.at(0.235) - roof.normal(1) * (sec('410UB59.7')['d'] / 2)"
+axis = [1, 0, 0]
+up = [0, 0, 1]
+side = [0, 1, 0]
+rows = [0.26, 0.145, -0.145, -0.26]
+cols = [-0.045, 0.045]
+bolt = "M20"
+grip = 0.036
+
+[[stiffeners]]
+name = "st"
+column_pt = [0, 0, 0]
+section = "460UB82.1"
+levels = ["roof.at(0.25).z - 0.009", "roof.at(0.25).z - sec('410UB59.7')['d'] + 0.009"]
+
+[[purlins]]
+name = "pur"
+line = "roof"
+spacing = 1.2
+start = 1.2
+until = 4.9
+y0 = -1.5
+y1 = 1.8
+section = "Z25019"
+
+[[girts]]
+name = "girt"
+x = -0.2302
+levels = [4.6]
+y0 = -1.5
+y1 = 1.8
+section = "Z25019"
+
+[[fly_brace]]
+name = "fb"
+flange_pt = "pur[1] - roof.normal(1) * sec('410UB59.7')['d'] + V(0, 0, 0.01)"
+purlin_pt = "pur[1] + roof.normal(1) * 0.12 + V(0, 1.0, 0)"
+
+[anchors]
+col = [0.2302, -0.0955, 4.0]
+rafter = "roof.at(4.2) - roof.normal(1) * 0.2 + V(0, -0.089, 0)"
+ep = "roof.at(0.25) - roof.normal(1) * 0.47 + V(0, -0.11, 0)"
+bolt = "roof.at(0.27) - roof.normal(1) * 0.26 + V(0, -0.045, 0.26)"
+stiff = "V(0, -0.0955, roof.at(0.25).z - 0.4)"
+purlin = "pur[3] + V(0, -1.3, 0.2)"
+girt = [-0.43, -1.3, 4.6]
+fly = "pur[1] - roof.normal(1) * 0.41 + V(0, -0.5, 0.04)"
+# elevation (2D dims, ortho view only)
+rt = "roof.at(0.55)"
+rb = "roof.at(0.55) - roof.normal(1) * sec('410UB59.7')['d']"
+ct = [0.2302, 0, 4.8]
+cb = [-0.2302, 0, 4.8]
+I = "roof.at(0.0)"
+
+[[dim]]
+name = "le"
+a = "roof.at(0.25) - roof.normal(1) * 0.4064 + V(0, -0.089, 0)"
+b = "pur[1] - roof.normal(1) * 0.4064 + V(0, -0.089, 0)"
+off = "-roof.normal(1) * 0.7 + V(0, -0.25, 0)"
+
+[[wave]]
+name = "wave"
+a = "roof.at(0.25) - roof.normal(1) * 0.4064 + V(0, -0.089, 0)"
+b = "pur[1] - roof.normal(1) * 0.4064 + V(0, -0.089, 0)"
+amp = 0.25
+side = [0, -1, 0]
+
+[[view]]
+name = "knee"
+camera = [7.5, -8.0, 4.2, 1.8, 0.2, 5.6, 40]
+width_cm = 14
+bounds = ["wave"]
+draw = [["line", ["wave"], "line width=0.8pt, densely dashed, acc"], ["dim3", "le", "$L_e = 2400$", "below"]]
+  [[view.label]]
+  anchor = "col"
+  text = "460UB82.1 column (designed)"
+  dx = 1.3
+  dy = -0.5
+  [[view.label]]
+  anchor = "rafter"
+  text = "410UB59.7 rafter"
+  dx = 0.4
+  dy = -1.0
+  [[view.label]]
+  anchor = "ep"
+  text = "bolted end plate"
+  dx = 1.0
+  dy = -2.3
+  [[view.label]]
+  anchor = "bolt"
+  text = "M20 bolts above and below each rafter flange"
+  dx = 1.1
+  dy = 0.4
+  [[view.label]]
+  anchor = "stiff"
+  text = "column stiffeners in line with the rafter flanges"
+  dx = -1.3
+  dy = -0.3
+  [[view.label]]
+  anchor = "purlin"
+  text = "Z25019 purlins at 1200 on the top flange"
+  dx = -0.5
+  dy = 0.8
+  [[view.label]]
+  anchor = "girt"
+  text = "Z25019 girt on the outside flange"
+  dx = -0.6
+  dy = 0.5
+  [[view.label]]
+  anchor = "fly"
+  text = "fly brace (both sides) to the bottom flange"
+  dx = 0.9
+  dy = -0.6
+
+[[view]]
+name = "knee_elev"
+ortho = { look = "+y", scale = 2.6, at = [0.6, 0, 5.55] }
+height_cm = 5.5
+crop = [[-0.9, 0, 4.5], [1.6, 0, 6.45]]
+caption = "elevation at the knee, looking north"
+draw = [["dim", "rt", "rb", "406", 0.6, "right"], ["dim", "ct", "cb", "460", -0.5, "below"]]
+  [[view.label]]
+  anchor = "I"
+  text = ""
+  dx = -0.9
+  dy = 0.6
+  num = 1
+
+[figure]
+name = "knee"
+key_cols = 1
+key_beside = true
+key_extra = ["\\tikz[baseline=-0.6ex]\\draw[line width=0.8pt, densely dashed, acc] (0,0) -- (0.6,0); buckled shape of the bottom flange under hogging (exaggerated); $L_e$ from the knee to the fly brace"]

@@ -1,0 +1,25 @@
+# steelfig default style (CIVL3206, agreed 2026-10-09): fabricator's-manual look, one accent colour.
+name = "default"
+
+[colours]            # sRGB hex; Blender gets them linearised, TikZ as rgb
+steel  = "#8f9196"   # main members
+light  = "#c5c7cb"   # secondary members: purlins, girts, diagonals
+dark   = "#75767a"   # bolts, nuts
+accent = "#c9553f"   # ONE subject per figure (muted brick red)
+sheet  = "#d9d5c9"   # roof / wall sheeting
+weld   = "#5e5e60"
+conc   = "#e6e4e0"
+grout  = "#cbcac6"
+line   = "#000000"   # Freestyle outline: keep black (linear 0)
+
+[render]
+line_width = 1.6     # px at full resolution
+quick_scale = 0.5
+resolution = [3000, 2100]
+background_strength = 0.55
+
+[tikz]
+font = "\\footnotesize"
+balloon_mm = 3.3
+line_width_pt = 0.35
+key_hang_mm = 4.5

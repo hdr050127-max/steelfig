@@ -1,0 +1,74 @@
+# A frame drawn straight from the Microstran model (D3 Section 1, model M9): no coordinates retyped.
+# Sections come from the PROP names in the .arc; the two designed members are the accent. Three frames at the
+# building's frame spacing, purlins at 1200 on the roof line, cut at x = 47 m (the frame continues to grid G).
+#   steelfig build examples/frame_from_model/frame.toml /tmp/frame_out --report /tmp/frame_rep --quick
+title = "West end of the frame line, from the analysis model"
+
+[[model]]
+path = "D3_M9_opt1_adopt.arc"                 # relative to this scene file
+sections = { "200x200x9.0 SHS" = "200x200x9SHS" }      # every other PROP name already is a designation
+accent = [1, 101]                                      # member ids: west column, mid rafter A-B
+xmax = 47.0
+frames = [0.0, 11.315, 22.63]
+top_lift = 0.2665                                      # rafter tops flush: each piece hangs from the axis + half the 530UB depth
+
+[[line]]                                   # rafter top line = Microstran rafter axis lifted by half the haunch depth
+name = "roof"
+points = [[0.0, 10.5102], [6.2780, 10.7950], [17.4930, 11.3038], [21.9930, 11.5079], [26.4930, 11.7121], [39.7530, 12.3136], [44.2530, 12.5178], [48.7530, 12.7219]]
+lift = 0.2665
+
+[[purlins]]
+name = "pur"
+line = "roof"
+spacing = 1.2
+start = 1.2
+until = 46.5
+y0 = -1.4
+y1 = 24.0
+section = "Z25019"
+
+[anchors]
+colA = [0.3035, -0.114, 5.0]
+rafAB = "roof.at(12.0) - roof.normal(12) * 0.25 + V(0, -0.09, 0)"
+haunchA = "roof.at(3.2) - roof.normal(3) * 0.30 + V(0, -0.10, 0)"
+shsB = [21.993, -0.10, 4.0]
+purlin = "pur[13] + V(0, -1.2, 0.22)"
+gA = [0.0, 0.0, -1.3]
+gB = [21.993, 0.0, -1.3]
+gC = [44.253, 0.0, -1.3]
+
+[[view]]
+name = "frame"
+camera = [-17, -33, 16, 17, 8, 5.0, 30]
+width_cm = 15.6
+bounds = ["gA", "gC"]
+draw = [["grid", "gA", "A"], ["grid", "gB", "B"], ["grid", "gC", "C"]]
+  [[view.label]]
+  anchor = "colA"
+  text = "610UB113 west column (designed)"
+  dx = 1.6
+  dy = -0.8
+  [[view.label]]
+  anchor = "rafAB"
+  text = "360UB50.7 mid rafter A--B (designed)"
+  dx = 0.6
+  dy = -1.4
+  [[view.label]]
+  anchor = "haunchA"
+  text = "530UB92.4 haunch"
+  dx = -0.3
+  dy = -1.3
+  [[view.label]]
+  anchor = "shsB"
+  text = "200$\\times$200$\\times$9.0 SHS internal column"
+  dx = 1.0
+  dy = -0.6
+  [[view.label]]
+  anchor = "purlin"
+  text = "Z purlins at 1200 (Microstran members are drawn as the adopted sections; connections not modelled here)"
+  dx = -0.8
+  dy = 0.6
+
+[figure]
+name = "frame"
+key_cols = 2
