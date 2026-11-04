@@ -7,6 +7,10 @@ description: "True-size 3D figures of steel structures for reports and teaching,
 
 ## Step 0, every time: `python3 <this skill folder>/scripts/setup.py`
 
+If `python3` itself is missing (a Mac without the command line tools, a bare Windows), stop and ask the person to
+install Python 3.12 from https://www.python.org/downloads/ (macOS alternative: `xcode-select --install`); the
+script cannot run before that.
+
 It fetches the `steelfig` repository (https://github.com/hdr050127-max/steelfig) to `~/steelfig` on first use
 (git clone, or a zip download when git is missing), updates it on later uses (fast-forward only), picks a
 Python 3.11+ interpreter and records it in `<path>/.python`, prints `STEELFIG_HOME=<path>` and the doctor report
@@ -96,8 +100,8 @@ rationale file's ASSUMPTION lines: they must appear in the brief, caption or key
 ## Camera
 
 If the person wants to choose the view: `steelfig view <out_dir>` serves `viewer.html` (orbit / pan / zoom at the
-recommended camera, same lens and frame as the render). In Claude's browser pane read `window.cam` when they
-are done, then `steelfig set-camera scene.toml <view> "x,y,z,tx,ty,tz,lens"` and rebuild.
+recommended camera, same lens and frame as the render). When they are done, read `window.cam` from the page (a
+browser tool if you have one, else ask them to paste the numbers the page shows), then `steelfig set-camera scene.toml <view> "x,y,z,tx,ty,tz,lens"` and rebuild.
 
 ## Into the document
 
@@ -117,8 +121,8 @@ file. Commit these in the repo (`git -C <repo> …`), never inside the person's 
 ## Keeping it working
 
 `steelfig regress` builds every example scene and must stay silent; run it after changing the tool, a style or an
-example. `skills/blender-figures/evals/` holds five end-to-end cases (prompt + graders) for `claude plugin eval`
-when the person wants a billed run of the whole skill.
+example. `skills/blender-figures/evals/` holds five end-to-end cases (prompt + graders) (Claude Code's `claude plugin eval` format; other
+agents can read the prompts and graders as plain files).
 
 ## Extending
 

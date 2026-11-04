@@ -33,10 +33,12 @@ def sh(cmd, **kw):
 # ---------------------------------------------------------------- 1. the repository
 if path is None:
     path = candidates[0] or os.path.join(home, "steelfig")
+    cloned = False
     if git:
-        print("cloning steelfig to", path); sh([git, "clone", "--depth", "1", REPO, path], check=True)
-    else:
-        print("git is not installed: downloading", ZIP, "to", path)
+        print("cloning steelfig to", path); cloned = sh([git, "clone", "--depth", "1", REPO, path]).returncode == 0
+        if not cloned: shutil.rmtree(path, ignore_errors=True); print("git clone failed (no command line tools?); falling back to a zip download")
+    if not cloned:
+        print("downloading", ZIP, "to", path)
         data = urllib.request.urlopen(ZIP, timeout=120).read()
         with zipfile.ZipFile(io.BytesIO(data)) as z:
             top = z.namelist()[0].split("/")[0]

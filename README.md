@@ -54,13 +54,16 @@ leaders, dimensions and key drawn with Pillow) instead of a LaTeX fragment, so a
 Your own section tables: a folder of CSVs with the same columns as `steelfig/data/`, pointed to by
 `STEELFIG_DATA`. Nothing in the tool depends on files outside the repository.
 
-### With Claude Code: install the skill, it brings the tool
+### With a coding agent: install the skill, it brings the tool
 
 ```bash
 npx skills add hdr050127-max/steelfig --skill blender-figures -g -a claude-code -y
 ```
 
-(or copy `skills/blender-figures/` into `~/.claude/skills/`). The skill's `scripts/setup.py` clones this repository
+For OpenAI Codex use `-a codex` (skills land in `~/.codex/skills/`); `-a '*'` installs to every agent the
+installer knows. Or copy `skills/blender-figures/` into the agent's skills folder (`~/.claude/skills/`,
+`~/.codex/skills/`). The skill is plain Markdown plus a Python script, nothing agent-specific; a sandboxed agent
+(Codex by default) needs network approval for the first `setup.py` run. The skill's `scripts/setup.py` clones this repository
 to `~/steelfig` the first time it is used and keeps it updated, so nobody edits a path. Then ask for a figure in
 plain words, e.g. "draw the rafter-to-column knee with its purlins and fly braces".
 
