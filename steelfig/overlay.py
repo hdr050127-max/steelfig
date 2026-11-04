@@ -104,7 +104,7 @@ class Pic:
         """compare the first number in a dimension text with the model distance (mm or m); warn on > 0.5 %."""
         if pa is None or pb is None: return
         L = math.dist(pa, pb)
-        m = re.search(r"(\d+(?:\.\d+)?)", text.replace(",", "").replace(r"\,", ""))
+        m = re.search(r"(\d+(?:\.\d+)?)", text.replace(r"\,", "").replace(",", ""))     # thin space first, else "10\,500" reads as 10
         if not m: return
         v = float(m.group(1)); ok = abs(v - L * 1000) <= max(1.0, 0.005 * L * 1000) or abs(v - L) <= max(0.0005, 0.005 * L)
         if not ok: warn("dimension %r: text says %s but the model measures %.1f mm" % (text, m.group(1), L * 1000))
