@@ -94,6 +94,10 @@ def annotate(sc, out_dir, rep, preview=True):
             P.png = os.path.join(img_dir, "%s_hl%s.jpg" % (vn, i or ""))
         labels = [(l["anchor"], l.get("text", ""), l.get("dx"), l.get("dy")) + ((l["num"],) if "num" in l else ()) for l in v.get("label", [])]
         draw = [tuple(d) for d in v.get("draw", [])]
+        for l in labels:
+            if l[0].split("#")[0].replace("mid:", "").split(",")[0] not in P.A:
+                sys.exit("ERROR in [[view]] name = \"%s\": label anchor %r is not an anchor of this render; define it under [anchors] "
+                         "(expressions are not allowed in `anchor`). Known: %s" % (vn, l[0], ", ".join(sorted(P.A))[:400]))
         from steelfig import layout as LY
         occ = LY.Occupancy(P)
         fixed = []

@@ -34,7 +34,7 @@ _mats = {}
 def reset():
     """empty scene; call once per figure (or per shot when several figures share a script)."""
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    _mats.clear(); MEMBERS.clear()
+    _mats.clear(); MEMBERS.clear(); PARTS.clear()
 
 
 def mat(name, rgba, rough=0.55, metal=0.0):
@@ -188,13 +188,17 @@ def _tube(name, p0, p1, outer, inner, material, up, cut0=None, cut1=None):
 
 # ---------------------------------------------------------------- members
 MEMBERS = {}          # name -> (p0, p1, designation) of every member() call, for automatic anchors
+PARTS = {}            # name -> centre of every plate() call
 
 
 def member_anchors(prefix="m."):
-    """anchors for every member drawn with member(): <prefix><name> = midpoint, .a / .b = ends."""
+    """anchors for every member drawn with member(): <prefix><name> = midpoint, .a / .b = ends; plates get
+    <prefix><name> = centre."""
     out = {}
     for n, (a, b, d) in MEMBERS.items():
         out[prefix + n] = tuple((a + b) / 2); out[prefix + n + ".a"] = tuple(a); out[prefix + n + ".b"] = tuple(b)
+    for n, c in PARTS.items():
+        out.setdefault(prefix + n, tuple(c))
     return out
 
 
@@ -294,6 +298,7 @@ def box(name, center, size, material, rot=None):
 def plate(name, center, ex, ey, size, material):
     """plate centred on center; sides size[0] along ex, size[1] along ey, size[2] (thickness) along ex x ey."""
     ex = Vector(ex).normalized(); ey = Vector(ey).normalized(); ez = ex.cross(ey)
+    PARTS[name] = Vector(center)
     return box(name, center, size, material, rot=rot_frame(ex, ey, ez))
 
 
