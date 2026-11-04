@@ -39,3 +39,10 @@
   50 m box on the +normal side, so put the point exactly on the cut plane and keep the scene inside 50 m of it.
 - **A boolean cut of a hollow section** can leave a diagonal Freestyle line across the inner face (its quads are
   re-triangulated); crease angle 135° hides most of them. Rotate the view or hide the far wall if one shows.
+- **Hidden lines showing through a long member** (extra lines on a flat web, edges of members behind it): Freestyle
+  loses occluders that are very long and thin. `build_scene.py` calls `B.split_long_faces()` before rendering; a
+  Python API figure with long members should call it too, after any `boolean_cut` and before the views. Neither
+  triangulating the faces nor `use_culling = False` cures it.
+- **`crop` on a view** is the bounding box of the two points as projected on screen and cannot go beyond the camera
+  frame: on a perspective view pick points that differ along the screen's horizontal, and on an orthographic view raise
+  `scale` until the whole crop is in frame (a plan cut off at one side means `scale` is too small).
