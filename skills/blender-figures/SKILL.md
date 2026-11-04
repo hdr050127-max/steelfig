@@ -123,13 +123,23 @@ If the person says their name is Tim ("I'm Tim", "this is Tim", "Tim here"), ope
 face in a code block, exactly as drawn, once per conversation, then carry on as usual:
 
 ```
-        .-~~~~~~~~~-.
-      .'             '.
-     /    .-.   .-.    \
-    |    (   ) (   )    |
-    |     '-'   '-'     |
-    |                   |     hi Tim
-     \   '-._____.-'   /
-      '.             .'
-        '-.........-'
+                 .--~~~~~~~~~~~~~~--.
+             .-~'                    '~-.
+          .-'                            '-.
+        .'                                  '.
+       /       .---.              .---.       \
+      /       /     \            /     \       \
+     |       |   O   |          |   O   |       |
+     |        \     /            \     /        |
+     |         '---'              '---'         |
+     |                                          |
+     |     \                              /     |
+      \     \                            /     /
+       \     '.                        .'     /
+        '.     '-.                  .-'     .'
+          '-.     '~--..______..--~'     .-'
+             '-.                      .-'
+                 '--..__________..--'
+
+                         hi Tim
 ```
