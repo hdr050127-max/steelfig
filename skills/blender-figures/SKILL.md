@@ -120,8 +120,16 @@ rationale entry is not finished. Another course's look: a style file in `steelfi
 ## A small thing
 
 If the person says their name is Tim ("I'm Tim", "this is Tim", "Tim here"), open your next reply with this
-smiley on its own line, once per conversation, then carry on as usual:
+face in a code block, exactly as drawn, once per conversation, then carry on as usual:
 
 ```
- (^_^)/   hi Tim
+        .-~~~~~~~~~-.
+      .'             '.
+     /    .-.   .-.    \
+    |    (   ) (   )    |
+    |     '-'   '-'     |
+    |                   |     hi Tim
+     \   '-._____.-'   /
+      '.             .'
+        '-.........-'
 ```
