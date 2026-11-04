@@ -77,70 +77,49 @@ def annotate_file(scene_path, out_dir, report_dir=None, preview=True, png=False)
 
 def annotate(sc, out_dir, rep, preview=True):
     sys.path.insert(0, ROOT)
-    from steelfig import overlay as O
+    from steelfig import overlay as O, compose as C, layout as LY
     name = sc.get("figure", {}).get("name") or os.path.splitext(os.path.basename(out_dir))[0]
-    img_dir = sc.get("figure", {}).get("image_dir", "images/steelfig")
-    parts, key_all = [], []
-    for v in sc.get("view", []):
-        vn = v["name"]
-        O.flatten(os.path.join(out_dir, vn + ".png"), os.path.join(rep, img_dir, vn + ".jpg"))
-        jp = os.path.join(out_dir, vn + ".json"); jf = os.path.join(rep, img_dir, vn + ".jpg")
-        P = O.pic_by_height(os.path.join(img_dir, vn + ".jpg"), jp, v["height_cm"], v.get("max_width_cm", 16)) if "height_cm" in v \
-            else O.Pic(os.path.join(img_dir, vn + ".jpg"), jp, v.get("width_cm", 14))
-        P.file = jf
-        for i, hl in enumerate(v.get("highlight", [])):
-            P.highlight(hl["objects"], hl.get("colour", "#c9553f"), hl.get("alpha", 0.45), hl.get("outline", 0), hl.get("dim", 0.0),
-                        out=os.path.join(rep, img_dir, "%s_hl%s.jpg" % (vn, i or "")))
-            P.png = os.path.join(img_dir, "%s_hl%s.jpg" % (vn, i or ""))
-        labels = [(l["anchor"], l.get("text", ""), l.get("dx"), l.get("dy")) + ((l["num"],) if "num" in l else ()) for l in v.get("label", [])]
-        draw = [tuple(d) for d in v.get("draw", [])]
-        for l in labels:
-            if l[0].split("#")[0].replace("mid:", "").split(",")[0] not in P.A:
-                sys.exit("ERROR in [[view]] name = \"%s\": label anchor %r is not an anchor of this render; define it under [anchors] "
-                         "(expressions are not allowed in `anchor`). Known: %s" % (vn, l[0], ", ".join(sorted(P.A))[:400]))
-        from steelfig import layout as LY
-        occ = LY.Occupancy(P)
-        fixed = []
-        for d in draw:                                                      # keep balloons away from dimension texts
-            if d[0] == "dim3":
-                try: a2, b2 = P.pts(d[1] + "_a2")[0], P.pts(d[1] + "_b2")[0]; fixed.append(((a2[0] + b2[0]) / 2, (a2[1] + b2[1]) / 2))
-                except KeyError: pass
-        if any(l[2] is None or l[3] is None for l in labels):
-            labels = LY.place_balloons(P, labels, occ, fixed=fixed)
-            auto = [(l[0], l[2], l[3]) for l in labels]
-            print("auto balloons [%s]: %s" % (vn, ", ".join("%s (%+.1f, %+.1f)" % a for a in auto)))
-        start = len(key_all) + 1 if v.get("continue_numbers", True) else 1
-        tik, key = O.balloon(P, labels, draw, start=start)
-        # renumber for the check the same way balloon() did
-        numbered, n = [], start - 1
-        for l in labels:
-            if len(l) > 4: numbered.append(tuple(l))
-            else: n += 1; numbered.append(tuple(l[:4]) + (n,))
-        for f in LY.check(P, numbered, draw, key, occ): O.warn("[%s] %s" % (vn, f))
-        key_all += key
-        part = O.captioned(tik, v["caption"], P.W + 0.4) if v.get("caption") else tik
-        parts.append((part, P))
-    for k in sc.get("figure", {}).get("key_extra", []): key_all.append(k)
-    F = sc.get("figure", {}); W = F.get("width_cm", (max(p.W for _, p in parts) if F.get("layout", "stack") != "grid2" else 15.6) if parts else 14)
-    layout = F.get("layout", "stack")
-    if layout == "row": body = O.row([p for p, _ in parts])
-    elif layout == "grid2":                                   # two columns: pairs of views side by side
-        rows = []
-        for i in range(0, len(parts), 2):
-            pair = parts[i:i + 2]
-            rows.append(r"\hfill".join(r"\begin{minipage}[t]{%.2fcm}\centering %s\end{minipage}" % (W / 2 - 0.2, p) for p, _ in pair))
-        body = ("\n\n" + r"\vspace{4mm}" + "\n").join(rows)
-    else: body = ("\n\n" + r"\vspace{2mm}" + "\n").join(p for p, _ in parts)
-    key = O.keycols(key_all, W, F.get("key_cols", 1)) if key_all else ""
-    if F.get("key_beside") and len(parts) > 1:
-        body = ("\n\n" + r"\vspace{2mm}" + "\n").join(p for p, _ in parts[:-1]) + "\n\n" + r"\vspace{2mm}" + "\n" + parts[-1][0] + r"\hfill" + O.keylist(key_all, W - parts[-1][1].W - 0.8)
-    else:
-        body = body + ("\n\n" + r"\vspace{2mm}" + "\n" + key if key else "")
+    img_dir = sc.get("figure", {}).get("image_dir", "images/steelfig"); F = sc.get("figure", {})
+    layout, rows = C.plan(sc, out_dir); W = float(F.get("width_cm", 15.6)); pieces, key_all = {}, []
+    for r in rows:
+        for v, w, h in r:
+            vn = v["name"]; jp = os.path.join(out_dir, vn + ".json"); jf = os.path.join(rep, img_dir, vn + ".jpg")
+            O.flatten(os.path.join(out_dir, vn + ".png"), jf)
+            P = O.Pic(os.path.join(img_dir, vn + ".jpg"), jp, w); P.file = jf
+            for i, hl in enumerate(v.get("highlight", [])):
+                P.highlight(hl["objects"], hl.get("colour", "#c9553f"), hl.get("alpha", 0.45), hl.get("outline", 0), hl.get("dim", 0.0),
+                            out=os.path.join(rep, img_dir, "%s_hl%s.jpg" % (vn, i or "")))
+                P.png = os.path.join(img_dir, "%s_hl%s.jpg" % (vn, i or ""))
+            labels = [(l["anchor"], l.get("text", ""), l.get("dx"), l.get("dy")) + ((l["num"],) if "num" in l else ()) for l in v.get("label", [])]
+            draw = [tuple(d) for d in v.get("draw", [])]
+            for l in labels:
+                if l[0].split("#")[0].replace("mid:", "").split(",")[0] not in P.A:
+                    sys.exit("ERROR in [[view]] name = \"%s\": label anchor %r is not an anchor of this render; define it under [anchors] "
+                             "(expressions are not allowed in `anchor`). Known: %s" % (vn, l[0], ", ".join(sorted(P.A))[:400]))
+            occ = LY.Occupancy(P); fixed = []
+            for d in draw:
+                if d[0] == "dim3":
+                    try: a2, b2 = P.pts(d[1] + "_a2")[0], P.pts(d[1] + "_b2")[0]; fixed.append(((a2[0] + b2[0]) / 2, (a2[1] + b2[1]) / 2))
+                    except KeyError: pass
+            if any(l[2] is None or l[3] is None for l in labels):
+                labels = LY.place_balloons(P, labels, occ, fixed=fixed)
+                print("auto balloons [%s]: %s" % (vn, ", ".join("%s (%+.1f, %+.1f)" % (l[0], l[2], l[3]) for l in labels)))
+            start = len(key_all) + 1 if v.get("continue_numbers", True) else 1
+            tik, key = O.balloon(P, labels, draw, start=start)
+            numbered, n = [], start - 1
+            for l in labels:
+                if len(l) > 4: numbered.append(tuple(l))
+                else: n += 1; numbered.append(tuple(l[:4]) + (n,))
+            for f in LY.check(P, numbered, draw, key, occ): O.warn("[%s] %s" % (vn, f))
+            key_all += key; pieces[vn] = tik
+    key_all += list(F.get("key_extra", []))
+    body = C.figure(rows, pieces, W, key_all, F.get("key_cols"))
     O.emit(os.path.join(rep, "figures", "fig_%s.tex" % name), body, "steelfig build")
     if preview:
-        pdf = O.preview(body, os.path.join(rep, "preview"), name, cwd=rep, width_cm=W + 1)
+        pdf = O.preview_doc(C.page(body, sc.get("title", name), None, W), os.path.join(rep, "preview"), name, cwd=rep)
         print("preview", pdf)
-    if O.warnings(): print("%d warning(s): check the dimensions above" % len(O.warnings()))
+    print("layout %s: %s" % (layout, "; ".join(" + ".join("%s %.1fx%.1f cm" % (v["name"], w, h) for v, w, h in r) for r in rows)))
+    if O.warnings(): print("%d warning(s): check the lines above" % len(O.warnings()))
     return body
 
 
@@ -182,27 +161,24 @@ def build_all(target, out_root, report_dir=None, quick=False, check=False):
 
 
 def plain(sc, out_dir, rep):
-    """flatten every view's render to <rep>/images/steelfig/<view>.jpg and a one-page preview without any
-    annotation: the geometry checkpoint the person looks at before labels are added."""
+    """the geometry checkpoint: every view flattened to <rep>/images/steelfig/<view>.jpg and laid out on an A4
+    page exactly as the annotated figure will be (same layout, sizes and captions), with nothing drawn on it."""
     sys.path.insert(0, ROOT)
-    from steelfig import overlay as O
-    img_dir = sc.get("figure", {}).get("image_dir", "images/steelfig"); paths = []
-    for v in sc.get("view", []):
-        vn = v["name"]; jp = os.path.join(out_dir, vn + ".json")
-        if not os.path.exists(os.path.join(out_dir, vn + ".png")): continue
-        O.flatten(os.path.join(out_dir, vn + ".png"), os.path.join(rep, img_dir, vn + ".jpg")); paths.append(os.path.join(rep, img_dir, vn + ".jpg"))
-    name = sc.get("figure", {}).get("name") or "figure"
-    parts = []
-    for v in sc.get("view", []):
-        if not os.path.exists(os.path.join(out_dir, v["name"] + ".png")): continue
-        parts.append("\\includegraphics[width=%.1fcm]{%s}\\par{\\footnotesize view %s (no annotation)}\\par\\vspace{3mm}"
-                     % (min(v.get("width_cm", 14), 16.0), os.path.join(img_dir, v["name"] + ".jpg"), v["name"]))
-    body = "\n".join(parts)
+    from steelfig import overlay as O, compose as C
+    img_dir = sc.get("figure", {}).get("image_dir", "images/steelfig"); name = sc.get("figure", {}).get("name") or "figure"
+    layout, rows = C.plan(sc, out_dir); W = float(sc.get("figure", {}).get("width_cm", 15.6)); pieces = {}; paths = []
+    for r in rows:
+        for v, w, h in r:
+            jpg = os.path.join(rep, img_dir, v["name"] + ".jpg"); O.flatten(os.path.join(out_dir, v["name"] + ".png"), jpg); paths.append(jpg)
+            pieces[v["name"]] = r"\includegraphics[width=%.2fcm]{%s}" % (w, os.path.join(img_dir, v["name"] + ".jpg"))
+    body = C.figure(rows, pieces, W)
     try:
-        pdf = O.preview(body, os.path.join(rep, "preview"), name + "_plain", cwd=rep); print("plain preview", pdf)
+        pdf = O.preview_doc(C.page(body, sc.get("title", name), "geometry check, no annotation", W), os.path.join(rep, "preview"), name + "_plain", cwd=rep)
+        print("plain preview", pdf)
     except Exception as e:
-        print("plain preview not built (%s); the JPEGs are:" % e)
-    for p in paths: print("plain", p)
+        print("plain preview not built (%s)" % str(e)[:300])
+    for p_ in paths: print("plain", p_)
+    print("layout %s: %s" % (layout, "; ".join(" + ".join("%s %.1fx%.1f cm" % (v["name"], w, h) for v, w, h in r) for r in rows)))
     return paths
 
 

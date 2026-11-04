@@ -102,12 +102,14 @@ highlight = [{ objects = ["raf"], colour = "#c9553f", alpha = 0.55, outline = 2,
 
 [figure]
 name = "knee"          # fig_<name>.tex, preview/prev_<name>.pdf
-width_cm = 15          # key width
-layout = "stack"       # stack | row | grid2 (two columns of views)
-key_cols = 2
-key_beside = true      # key beside the last view instead of under everything
+width_cm = 15.6        # figure width on the page (A4 text width with 25 mm margins)
+layout = "auto"        # auto (1 view: stack, 2-3: row, 4+: grid2) | stack | row | grid2
+key_cols = 2           # default: 2 columns when the key has 4+ lines and the figure is wide
 key_extra = ["…"]      # extra key lines (fills, line styles) in TikZ/LaTeX
 image_dir = "images/steelfig"
+# Composition (steelfig/compose.py): views in a row share one height and fill the width with 4 mm gaps;
+# captions become "(a) …" automatically when there are several views; the key goes under the views; the
+# plain (geometry) preview uses exactly the same arrangement. A view's own width_cm / height_cm overrides it.
 ```
 
 `draw` items: `line`, `fill`, `arrow`, `dim`, `dim3`, `angle`, `text`, `grid`, `letter`, `detail`, `cutline`,

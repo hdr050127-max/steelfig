@@ -324,6 +324,18 @@ def pdflatex():
     raise FileNotFoundError("pdflatex not found (TinyTeX ~/Library/TinyTeX/bin/universal-darwin)")
 
 
+def preview_doc(src, out_dir, name, cwd=None):
+    """compile a complete LaTeX document to <out_dir>/prev_<name>.pdf (image paths resolve from cwd)."""
+    os.makedirs(out_dir, exist_ok=True)
+    tex = os.path.join(out_dir, "prev_%s.tex" % name); open(tex, "w").write(src)
+    r = subprocess.run([pdflatex(), "-interaction=nonstopmode", "-halt-on-error", "-output-directory", out_dir, tex],
+                       cwd=cwd or os.getcwd(), capture_output=True, text=True)
+    pdf = os.path.join(out_dir, "prev_%s.pdf" % name)
+    if r.returncode or not os.path.exists(pdf):
+        raise RuntimeError("pdflatex failed:\n" + r.stdout[-3000:])
+    return pdf
+
+
 def preview(body, out_dir, name, cwd=None, width_cm=16.0):
     """compile the figure body alone to <out_dir>/prev_<name>.pdf (image paths resolve from cwd) for checking."""
     out_dir = os.path.abspath(out_dir)                                           # pdflatex runs in cwd, not here

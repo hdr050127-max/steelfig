@@ -50,7 +50,9 @@ bin/steelfig build examples/knee/knee.toml /tmp/knee_out --report /tmp/knee_rep 
 open /tmp/knee_rep/preview/prev_knee.pdf
 ```
 
-Work in two stages: `--plain` renders the geometry with no labels so you (or the person you draw for) can check
+Figures are composed, not pasted: views in a row share one height and fill the text width, captions are
+lettered automatically, the key sits under the views in one or two columns, and the plain geometry preview is
+laid out exactly like the annotated figure, on an A4 page. Work in two stages: `--plain` renders the geometry with no labels so you (or the person you draw for) can check
 sections, positions and connections first; `steelfig annotate` then adds balloons, dimensions and highlights
 without re-rendering. One view per figure unless more are asked for.
 `--quick` renders small (40 %, fewer samples) to check the composition; drop it for the final: by default a view
