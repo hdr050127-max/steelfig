@@ -1,7 +1,7 @@
 """Build and render a scene.json (compiled from a steelfig TOML scene) inside Blender.
 Run by steelfig/scene.py: Blender --background --python build_scene.py -- <out_dir> <scene.json> [quick]"""
 import sys, os, json, math
-import bfig as B, assembly as A
+import bfig as B, assembly as A, connections as CN
 from mathutils import Vector
 from steelfig import sections as SEC_DB
 
@@ -43,19 +43,46 @@ def plane(c):
     return (pt(c[0]), vec(c[1])) if c else None
 
 
-def mat(name):
-    return M[name or "steel"]
+def mat(name, default="steel"):
+    """palette material by name; None lets member() choose the finish from the section type."""
+    return M[name] if name else (M[default] if default else None)
 
 
 ys = sc.get("frames", [0.0])
+msec = {mb["name"]: mb["section"] for mb in sc.get("member", [])}
+conns = []
+for cn in sc.get("connection", []):
+    typ = cn["type"]; nm = cn.get("name", typ); L = lines[cn["line"]] if "line" in cn else None
+    kw = {k: (num(v) if isinstance(v, str) and k not in ("bolt",) and k.endswith(("_t", "_ext", "_in", "_off", "x", "z0")) else v) for k, v in cn.items()
+          if k not in ("type", "name", "line", "column", "rafter", "a", "b", "member")}
+    if typ == "knee":
+        conns.append(CN.knee(nm, L, num(cn["x"]), cn["column"], msec[cn["column"]], cn["rafter"], msec[cn["rafter"]], M, **{k: v for k, v in kw.items() if k != "x"}))
+    elif typ == "splice":
+        conns.append(CN.splice(nm, L, num(cn["x"]), cn["a"], msec[cn["a"]], cn["b"], msec[cn["b"]], M, **{k: v for k, v in kw.items() if k != "x"}))
+    elif typ == "cap":
+        conns.append(CN.cap(nm, L, num(cn["x"]), cn["column"], msec[cn["column"]], msec[cn["rafter"]], M, **{k: v for k, v in kw.items() if k != "x"}))
+    elif typ == "base":
+        conns.append(CN.base(nm, num(cn["x"]), cn["column"], msec[cn["column"]], M, **{k: v for k, v in kw.items() if k != "x"}))
+    else:
+        raise ValueError("unknown connection type " + typ)
+auto_cuts = {}
+for c in conns:
+    for mname, cuts in c["cuts"].items(): auto_cuts.setdefault(mname, {}).update(cuts)
 for mb in sc.get("member", []):
     a, b = pt(mb["from"]), pt(mb["to"])
+    ac = auto_cuts.get(mb["name"], {})
+    c0 = plane(mb.get("cut0")) if "cut0" in mb else ac.get("cut0"); c1 = plane(mb.get("cut1")) if "cut1" in mb else ac.get("cut1")
     for y in (ys if mb.get("per_frame") else [0.0]):
         off = Vector((0, y, 0))
-        ob = B.member("%s_%g" % (mb["name"], y) if y else mb["name"], a + off, b + off, mb["section"], mat(mb.get("material")),
-                      up=vec(mb.get("up")), cut0=plane(mb.get("cut0")), cut1=plane(mb.get("cut1")), align=mb.get("align", "centroid"), flip=mb.get("flip", False))
+        sh = lambda pl: (pl[0] + off, pl[1]) if pl else None
+        ob = B.member("%s_%g" % (mb["name"], y) if y else mb["name"], a + off, b + off, mb["section"], mat(mb.get("material"), None),
+                      up=vec(mb.get("up")), cut0=sh(c0), cut1=sh(c1), align=mb.get("align", "centroid"), flip=mb.get("flip", False))
         if not y:
             members[mb["name"]] = ob; e = _Ends(); e.a, e.b = a, b; setattr(mem_ns, mb["name"], e)
+conn_anchors = {}
+for c, cn in zip(conns, sc.get("connection", [])):
+    c["build"]()
+    for k, v in c["anchors"].items(): conn_anchors["%s.%s" % (cn.get("name", cn["type"]), k)] = v
 for pl in sc.get("plate", []):
     B.plate(pl["name"], pt(pl["centre"]), vec(pl.get("ex", [1, 0, 0])), vec(pl.get("ey", [0, 1, 0])), pl["size"], mat(pl.get("material")))
 for bg in sc.get("bolts", []):
@@ -69,10 +96,22 @@ for pu in sc.get("purlins", []):
                        num(pu.get("start", 0.0)), num(pu["until"]) if "until" in pu else None, from_end=pu.get("from_end", False), flip_alternate=pu.get("flip_alternate", False))
     purlin_pts[pu.get("name", "pur")] = [p for p, _ in res]
     NS[pu.get("name", "pur")] = [p for p, _ in res]
+    if pu.get("cleats"): CN.purlin_cleats(pu.get("name", "pur") + "_cl", [p for p, _ in res], pu["section"], lines[pu["line"]], M)
 for gi in sc.get("girts", []):
     A.girts_on(gi.get("name", "girt"), num(gi["x"]), nums(gi["levels"]), num(gi["y0"]), num(gi["y1"]), gi["section"], mat(gi.get("material", "light")), vec(gi.get("outward", [-1, 0, 0])))
+fly_anchors = {}
 for fb in sc.get("fly_brace", []):
-    A.fly_brace(fb["name"], pt(fb["flange_pt"]), pt(fb["purlin_pt"]), mat(fb.get("material", "dark")), fb.get("section", "75x75x6 EA"), fb.get("both_sides", True))
+    if "purlins" in fb:                                     # built form: against the purlin web, bolt, cleat
+        pu = next(x for x in sc["purlins"] if x.get("name", "pur") == fb["purlins"]); L = lines[pu["line"]]
+        pts = purlin_pts[fb["purlins"]]; x0 = pts[0].x if pts else 0.0
+        mp = SEC_DB.profile(members[fb["member"]].name if False else fb["section_of"]) if "section_of" in fb else None
+        d_m, b_m = (num(fb["member_depth"]), num(fb["member_bf"])) if "member_depth" in fb else (mp["d"], mp["b"])
+        _, fa = A.fly_braces_on(fb.get("name", "fb"), pts, pu["section"], d_m, b_m, mat(fb.get("material", "dark")), mat("dark"),
+                                fb.get("section", "75x75x6 EA"), normal=L.normal(x0 + 0.01), which=fb.get("at"), both_sides=fb.get("both_sides", True),
+                                cleat=fb.get("cleat", True), line_tangent=L.tangent(x0 + 0.01))
+        fly_anchors.update(fa)
+    else:                                                   # legacy: straight angle between two points
+        A.fly_brace(fb["name"], pt(fb["flange_pt"]), pt(fb["purlin_pt"]), mat(fb.get("material", "dark")), fb.get("section", "75x75x6 EA"), fb.get("both_sides", True))
 for sh in sc.get("sheeting", []):
     L = lines[sh["line"]]; n = L.normal(sh["x0"] + 0.01)
     B.sheet_slope(sh.get("name", "sheet"), L.at(sh["x0"]) + n * sh.get("lift", 0.25), L.at(sh["x1"]) + n * sh.get("lift", 0.25), sh["y0"], sh["y1"], n,
@@ -90,14 +129,16 @@ for cut in sc.get("section_cut", []):
 for ex in sc.get("explode", []):
     B.explode([o for o in B.all_meshes() if o.name in ex["objects"] or o.name.split("_")[0] in ex["objects"]], ex["vector"])
 
-# anchors: automatic ones for every member (m.<name>, m.<name>.a, m.<name>.b), then the scene's own
-An = B.member_anchors()
+# anchors: automatic ones for every member (m.<name>, m.<name>.a, m.<name>.b), fly braces (fb<k>+1 ...), then the scene's own
+An = B.member_anchors(); An.update(fly_anchors); An.update(conn_anchors)
 An.update({k: (tuple(pt(v)) if not (isinstance(v, list) and v and isinstance(v[0], (list, str))) else [tuple(pt(q)) for q in v]) for k, v in sc.get("anchors", {}).items()})
 for d in sc.get("dim", []):
     B.dim3(An, d["name"], pt(d["a"]), pt(d["b"]), pt(d["off"]))
 for w in sc.get("wave", []):
     An[w["name"]] = B.wave(pt(w["a"]), pt(w["b"]), w.get("amp", 0.3), vec(w.get("side", [0, -1, 0])))
 print("built", len(B.all_meshes()), "objects")
+if sc.get("check", False) or "check" in opt:
+    B.check_clashes(min_cm3=float(sc.get("check_min_cm3", 5.0)))
 
 for v in sc.get("view", []):
     if "camera" in v:

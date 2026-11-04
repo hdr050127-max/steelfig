@@ -45,3 +45,20 @@ class Style(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class LineGeometry(unittest.TestCase):
+    """the lift rule assembly.Line must follow (it needs mathutils, so the rule is re-stated here in pure Python):
+    a line lifted by `lift` along its normal is, at the same horizontal x, lift / cos(slope) higher and NOT
+    shifted in x. The 2026-11-04 end-plate clash came from shifting x by -lift*sin(slope)."""
+    def test_lift_rule(self):
+        import math
+        x0, z0, x1, z1, lift = 0.0, 10.5102, 6.278, 10.795, 0.2665
+        slope = math.atan2(z1 - z0, x1 - x0); x = 3.0
+        z_axis = z0 + (z1 - z0) * (x - x0) / (x1 - x0)
+        lifted = (x, z_axis + lift / math.cos(slope))
+        # perpendicular distance from the lifted point back to the axis line must equal lift
+        nx, nz = -math.sin(slope), math.cos(slope)
+        dist = (lifted[0] - x) * nx + (lifted[1] - z_axis) * nz
+        self.assertAlmostEqual(dist, lift, places=9)
+        self.assertEqual(lifted[0], x)

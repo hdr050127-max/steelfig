@@ -27,6 +27,8 @@ A point may also be `[x, y, z]` or `[x, z]` (y = 0).
 ```toml
 title = "…"                       # free text
 style = "default"                 # style sheet (steelfig/styles/<name>.toml or a path); optional
+                                  # members get a steel finish from their catalogue type ([finishes] / [finish_of] in the
+                                  # style: hot_rolled, hollow, galvanised, bolt, accent) unless `material` is given
 frames = [0.0, 11.315, 22.63]     # y positions; members with per_frame = true are repeated at each
 
 [[line]]  name = "roof"  points = [[x, z], …]  lift = 0.2665     # polyline in the xz plane; lift along its normal
@@ -47,6 +49,18 @@ per_frame = false
 [[girts]]  name  x  levels  y0  y1  section  outward  material
 [[fly_brace]]  name  flange_pt  purlin_pt  section = "75x75x6 EA"  both_sides = true  material
 [[sheeting]]  name  line  x0  x1  y0  y1  lift  rib  pitch  material
+[[connection]]  type = "knee"   name = "k"  line = "roof"  x = 0.0  column = "col"  rafter = "raf"  [diagonal = true]
+[[connection]]  type = "splice" name = "s"  line = "roof"  x = 6.278  a = "haunch"  b = "rafter"
+[[connection]]  type = "cap"    name = "c"  line = "roof"  x = 21.993  column = "colB"  rafter = "haunchB"
+[[connection]]  type = "base"   name = "b"  x = 0.0  column = "col"  [z0 = 0.0  plate_t  grout  bolt = "M24"]
+      # generated from the member sections: plates, bolt rows, stiffeners, grips; the named members are trimmed
+      # to the connection faces automatically (declare them to the column axis / splice point). Anchors:
+      # k.ep k.bolt k.bolt2 k.stiff k.face | s.ep s.bolt s.bolt2 s.face | c.capp c.bolt c.ws c.col | b.bp b.ab b.ab2 b.grout b.foot b.col
+      # extra keys: ep_t ep_ext bolt bolt_in row_off stiff_t cap_t plate_t grout footing bolts_in
+[[purlins]] … cleats = true                 # angle cleat + two bolts under every purlin
+[[fly_brace]]  purlins = "pur"  at = [1, 3]  member_depth = "sec('410UB59.7')['d']"  member_bf = "sec('410UB59.7')['b']"
+               section = "75x75x6 EA"  both_sides = true  cleat = true     # against the purlin web, cut under the top flange
+check = true           # top level: report solids passing through each other (> check_min_cm3, default 5 cm3)
 [[model]]  path = "model.arc"  sections = { "PROP name or member id" = "designation" }  default  accent = [ids]
            skip = [ids]  xmax  frames = [ys]  top_lift
 [[section_cut]]  point  normal  plane = "xz"  pitch = 0.012      # cuts everything on the +normal side, hatches the faces
@@ -73,7 +87,7 @@ highlight = [{ objects = ["raf"], colour = "#c9553f", alpha = 0.55, outline = 2,
 [figure]
 name = "knee"          # fig_<name>.tex, preview/prev_<name>.pdf
 width_cm = 15          # key width
-layout = "stack"       # stack | row
+layout = "stack"       # stack | row | grid2 (two columns of views)
 key_cols = 2
 key_beside = true      # key beside the last view instead of under everything
 key_extra = ["…"]      # extra key lines (fills, line styles) in TikZ/LaTeX

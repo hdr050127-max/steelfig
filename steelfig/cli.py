@@ -1,6 +1,7 @@
 """steelfig command line.
-  steelfig build <scene.toml> <out_dir> [--report <dir>] [--quick] [--no-preview] [--png]
-                                              TOML scene -> renders, fig_<name>.tex, preview PDF (+ PNG for Word)
+  steelfig build <scene.toml> <out_dir> [--report <dir>] [--quick] [--no-preview] [--png] [--check]
+                                              TOML scene -> renders, fig_<name>.tex, preview PDF (+ PNG for Word);
+                                              --check reports members that pass through each other (CLASH lines)
   steelfig annotate <scene.toml> <out_dir> [--report <dir>] [--png]                 redo labels / highlights only (no Blender)
   steelfig render <fig.py> <out_dir> [quick] [cam=...]                               run a Python figure script in Blender
   steelfig sections <query>                                                          search the catalogue (e.g. "360UB", "SHS", "x8 EA")
@@ -24,7 +25,9 @@ def main(argv=None):
         if "--no-preview" in a: a.remove("--no-preview"); prev = False
         png = "--png" in a
         if png: a.remove("--png")
-        scene.build(a[0], a[1], rep, quick, prev, png); return 0
+        chk = "--check" in a
+        if chk: a.remove("--check")
+        scene.build(a[0], a[1], rep, quick, prev, png, chk); return 0
     if cmd == "annotate":
         from steelfig import scene
         rep = None

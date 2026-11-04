@@ -27,3 +27,68 @@ font = "\\footnotesize"
 balloon_mm = 3.3
 line_width_pt = 0.35
 key_hang_mm = 4.5
+
+# ---------------------------------------------------------------- finishes (what the steel looks like)
+# Members pick a finish from their catalogue type unless the scene names a material explicitly.
+# colour sRGB; metallic / roughness 0..1; noise = roughness variation and fine bump (mill scale); spangle =
+# galvanising crystals (Voronoi) as a colour variation. Add a finish per grade (e.g. [finishes.C450]) and map it in
+# finish_of to change the look of one grade only.
+[finishes.hot_rolled]       # UB, UC, PFC, angles, plates: mill-scale grey with a blue cast, matte-ish
+colour = "#858990"
+metallic = 0.55
+roughness = 0.55
+noise = 0.12
+spangle = 0.0
+
+[finishes.hollow]           # SHS / RHS / CHS: smoother tube surface
+colour = "#8a8d91"
+metallic = 0.5
+roughness = 0.45
+noise = 0.06
+spangle = 0.0
+
+[finishes.galvanised]       # Z / C purlins and girts, sheeting: light, spangled
+colour = "#b7babd"
+metallic = 0.8
+roughness = 0.38
+noise = 0.04
+spangle = 0.08
+
+[finishes.bolt]             # structural bolts, HDG: dark grey
+colour = "#4a4c50"
+metallic = 0.6
+roughness = 0.5
+noise = 0.05
+spangle = 0.0
+
+[finishes.accent]           # the figure's subject: painted steel in the accent colour
+colour = "#c9553f"
+metallic = 0.25
+roughness = 0.5
+noise = 0.06
+spangle = 0.0
+
+[finish_of]                 # catalogue type (or grade) -> finish; palette names map too
+UB = "hot_rolled"
+UC = "hot_rolled"
+WB = "hot_rolled"
+WC = "hot_rolled"
+TFB = "hot_rolled"
+PFC = "hot_rolled"
+EA = "hot_rolled"
+UA = "hot_rolled"
+SHS = "hollow"
+RHS = "hollow"
+CHS = "hollow"
+Z = "galvanised"
+C = "galvanised"
+steel = "hot_rolled"
+light = "galvanised"
+dark = "bolt"
+accent = "accent"
+sheet = "galvanised"
+
+[world]                     # soft gradient environment so metal has something to reflect; film stays transparent
+sky = "#ffffff"
+ground = "#b9bcc0"
+strength = 0.95

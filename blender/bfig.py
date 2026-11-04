@@ -46,10 +46,52 @@ def mat(name, rgba, rough=0.55, metal=0.0):
     _mats[name] = m; return m
 
 
+def steel_mat(name, colour, metallic=0.55, roughness=0.55, noise=0.1, spangle=0.0, scale=6.0):
+    """a steel finish: Principled BSDF with roughness varied by a noise texture (mill scale), a faint bump from
+    the same noise, and optional galvanising spangle (Voronoi cells shifting the colour slightly)."""
+    if name in _mats: return _mats[name]
+    m = bpy.data.materials.new(name); m.use_nodes = True
+    nt = m.node_tree; N = nt.nodes; Lk = nt.links; b = N["Principled BSDF"]
+    b.inputs["Base Color"].default_value = colour; b.inputs["Metallic"].default_value = metallic; b.inputs["Roughness"].default_value = roughness
+    if noise:
+        tc = N.new("ShaderNodeTexCoord"); nz = N.new("ShaderNodeTexNoise"); nz.inputs["Scale"].default_value = scale; nz.inputs["Detail"].default_value = 3.0
+        Lk.new(tc.outputs["Object"], nz.inputs["Vector"])
+        mr = N.new("ShaderNodeMapRange"); mr.inputs["From Min"].default_value = 0.3; mr.inputs["From Max"].default_value = 0.7
+        mr.inputs["To Min"].default_value = max(0.05, roughness - noise); mr.inputs["To Max"].default_value = min(1.0, roughness + noise)
+        Lk.new(nz.outputs["Fac"], mr.inputs["Value"]); Lk.new(mr.outputs["Result"], b.inputs["Roughness"])
+        bp = N.new("ShaderNodeBump"); bp.inputs["Strength"].default_value = 0.04 * (noise / 0.1); bp.inputs["Distance"].default_value = 0.002
+        Lk.new(nz.outputs["Fac"], bp.inputs["Height"]); Lk.new(bp.outputs["Normal"], b.inputs["Normal"])
+    if spangle:
+        tc2 = N.new("ShaderNodeTexCoord"); vo = N.new("ShaderNodeTexVoronoi"); vo.inputs["Scale"].default_value = 40.0
+        Lk.new(tc2.outputs["Object"], vo.inputs["Vector"])
+        mix = N.new("ShaderNodeMix"); mix.data_type = "RGBA"; mix.inputs["Factor"].default_value = spangle
+        mix.inputs["A"].default_value = colour; Lk.new(vo.outputs["Color"], mix.inputs["B"]); Lk.new(mix.outputs["Result"], b.inputs["Base Color"])
+    _mats[name] = m; return m
+
+
+def finish(name):
+    """material for a finish name from the style ([finishes.<name>]), cached."""
+    F = ST["finishes"][name]
+    return steel_mat("finish_" + name, STYLE.rgba(F["colour"]), F.get("metallic", 0.5), F.get("roughness", 0.5), F.get("noise", 0.0), F.get("spangle", 0.0))
+
+
+def finish_for(designation):
+    """the finish a catalogue designation gets by default: its grade if mapped, else its type, else hot_rolled."""
+    r = SEC_DB.find(designation); fo = ST.get("finish_of", {})
+    key = fo.get(str(r.get("grade", ""))) or fo.get(r["type"]) or "hot_rolled"
+    return finish(key)
+
+
 def mats():
     """the palette of the active style sheet: steel (main members), light (secondary: purlins, girts, diagonals),
-    dark (bolts), accent (ONE subject per figure), sheet, weld, conc, grout."""
-    return {k: mat(k, STYLE.rgba(v)) for k, v in ST["colours"].items() if k != "line"}
+    dark (bolts), accent (ONE subject per figure), sheet, weld, conc, grout. Names mapped in [finish_of] get the
+    corresponding steel finish; the rest are flat colours."""
+    out = {}
+    fo = ST.get("finish_of", {})
+    for k, v in ST["colours"].items():
+        if k == "line": continue
+        out[k] = finish(fo[k]) if k in fo and "finishes" in ST else mat(k, STYLE.rgba(v))
+    return out
 
 
 def hatch_mat(name, base, ink, pitch=0.0022, angle=45, plane="xz"):
@@ -197,6 +239,7 @@ def member(name, p0, p1, designation, material, up=(0, 0, 1), cut0=None, cut1=No
     flip mirrors the profile across the u axis (Z purlins alternating, channel toes the other way)."""
     P = SEC_DB.profile(designation, min_t=min_t)
     MEMBERS[name] = (Vector(p0), Vector(p1), designation)
+    if material is None and "finishes" in ST: material = finish_for(designation)
     us = [u for u, v in P.get("pts", P.get("outer"))]
     off = {"centroid": 0.0, "top": -max(us), "bottom": -min(us), "heel": 0.0}[align]
     if align == "centroid" and P["row"]["type"] in ("EA", "UA", "Z", "C", "PFC"):
@@ -263,7 +306,7 @@ def cyl(name, center, axis, r, h, material, segments=24):
 def bolt(name, center, axis, dia, grip, material):
     """bolt through a joint: shank of grip + 2 nut heights, hex head one side, hex nut the other, centred on center."""
     ax = Vector(axis).normalized(); c = Vector(center); nh = 0.8 * dia; s = 1.6 * dia
-    cyl(name + "_shank", c, ax, dia / 2, grip + 2 * nh + 0.5 * dia, material, segments=16)
+    sh = cyl(name + "_shank", c, ax, dia / 2, grip + 2 * nh + 0.5 * dia, material, segments=16); sh["clash_ok"] = 1
     cyl(name + "_head", c - ax * (grip / 2 + nh / 2), ax, s / math.sqrt(3), nh, material, segments=6)
     cyl(name + "_nut", c + ax * (grip / 2 + nh / 2), ax, s / math.sqrt(3), nh, material, segments=6)
 
@@ -271,7 +314,7 @@ def bolt(name, center, axis, dia, grip, material):
 def anchor_bolt(name, base, dia, above=0.03, below=0.30, material=None):
     """holding-down bolt at `base` (top of base plate): shank below, washer + nut above."""
     b = Vector(base)
-    cyl(name, b + Vector((0, 0, (above - below) / 2)), (0, 0, 1), dia / 2, above + below, material, segments=16)
+    sh = cyl(name, b + Vector((0, 0, (above - below) / 2)), (0, 0, 1), dia / 2, above + below, material, segments=16); sh["clash_ok"] = 1
     cyl(name + "_wsh", b + Vector((0, 0, 0.003)), (0, 0, 1), 1.25 * dia, 0.006, material, segments=24)
     cyl(name + "_nut", b + Vector((0, 0, 0.006 + 0.4 * dia)), (0, 0, 1), dia, 0.8 * dia, material, segments=6)
 
@@ -343,7 +386,7 @@ def weld_ring(name, corners, axis, w, material):
         j = (i + 1) % n
         bm.faces.new((A[i], A[j], Bv[j], Bv[i])); bm.faces.new((C[i], C[j], A[j], A[i])); bm.faces.new((Bv[i], Bv[j], C[j], C[i]))
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-    return _obj(name, bm, material)
+    ob = _obj(name, bm, material); ob["clash_ok"] = 1; return ob
 
 
 def weld_line(name, p0, p1, leg, ey, ez, material):
@@ -385,6 +428,41 @@ def all_meshes():
     return [o for o in bpy.context.scene.objects if o.type == 'MESH']
 
 
+def check_clashes(objs=None, min_cm3=0.05, skip_ok=True):
+    """find pairs of solids that occupy the same space (members passing through each other). For every pair whose
+    bounding boxes overlap, the exact boolean intersection volume is computed; pairs above min_cm3 are returned
+    as (name_a, name_b, cm3) and printed as CLASH lines. Objects tagged ob["clash_ok"] (bolt shanks, welds) are
+    skipped. Touching faces (a purlin sitting on a flange) have zero volume and do not count."""
+    objs = [o for o in (objs or all_meshes()) if not (skip_ok and o.get("clash_ok"))]
+    def bbox(o):
+        pts = [o.matrix_world @ Vector(c) for c in o.bound_box]
+        return Vector(map(min, zip(*pts))), Vector(map(max, zip(*pts)))
+    boxes = {o.name: bbox(o) for o in objs}
+    out = []
+    for i, a in enumerate(objs):
+        for b in objs[i + 1:]:
+            (a0, a1), (b0, b1) = boxes[a.name], boxes[b.name]
+            if any(a1[k] < b0[k] - 1e-4 or b1[k] < a0[k] - 1e-4 for k in range(3)): continue
+            c = a.copy(); c.data = a.data.copy(); bpy.context.scene.collection.objects.link(c)
+            m = c.modifiers.new("x", "BOOLEAN"); m.operation = "INTERSECT"; m.object = b; m.solver = "EXACT"
+            bpy.context.view_layer.objects.active = c
+            where = None
+            try:
+                bpy.ops.object.modifier_apply(modifier=m.name)
+                bm = bmesh.new(); bm.from_mesh(c.data); bm.transform(c.matrix_world); vol = abs(bm.calc_volume())
+                if bm.verts: where = sum((v.co for v in bm.verts), Vector()) / len(bm.verts)
+                bm.free()
+            except Exception:
+                vol = 0.0
+            bpy.data.objects.remove(c, do_unlink=True)
+            cm3 = vol * 1e6
+            if cm3 > min_cm3: out.append((a.name, b.name, cm3, where))
+    for a, b, v, w in sorted(out, key=lambda r: -r[2]):
+        print("CLASH %s x %s: %.1f cm3 near (%.3f, %.3f, %.3f)" % (a, b, v, *(w or Vector())))
+    if not out: print("clash check: no overlapping solids")
+    return out
+
+
 # ---------------------------------------------------------------- camera, lights, line art
 def setup(cam_loc, target, lens=40, res=None, ortho=None, line=None, quick=False, cam=None, line_color=None):
     """white world, two suns, Freestyle outlines, transparent film. ortho = ortho_scale for an orthographic view.
@@ -397,6 +475,14 @@ def setup(cam_loc, target, lens=40, res=None, ortho=None, line=None, quick=False
     sc = bpy.context.scene
     world = bpy.data.worlds.new("w"); sc.world = world; world.use_nodes = True
     bg = world.node_tree.nodes["Background"]; bg.inputs[0].default_value = (1, 1, 1, 1); bg.inputs[1].default_value = R["background_strength"]
+    W = ST.get("world")
+    if W:                                                     # sky-to-ground gradient: gives metal something to reflect
+        nt = world.node_tree; N = nt.nodes; Lk = nt.links
+        tc = N.new("ShaderNodeTexCoord"); sp = N.new("ShaderNodeSeparateXYZ"); Lk.new(tc.outputs["Generated"], sp.inputs[0])
+        mr = N.new("ShaderNodeMapRange"); mr.inputs["From Min"].default_value = 0.3; mr.inputs["From Max"].default_value = 0.8
+        Lk.new(sp.outputs["Z"], mr.inputs["Value"])
+        mix = N.new("ShaderNodeMix"); mix.data_type = "RGBA"; mix.inputs["A"].default_value = STYLE.rgba(W["ground"]); mix.inputs["B"].default_value = STYLE.rgba(W["sky"])
+        Lk.new(mr.outputs["Result"], mix.inputs["Factor"]); Lk.new(mix.outputs["Result"], bg.inputs[0]); bg.inputs[1].default_value = W.get("strength", 0.75)
     camo = bpy.data.objects.new("cam", bpy.data.cameras.new("cam")); sc.collection.objects.link(camo)
     camo.location = cam_loc; d = Vector(target) - Vector(cam_loc); camo.rotation_euler = d.to_track_quat('-Z', 'Y').to_euler()
     camo.data.lens = lens

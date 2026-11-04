@@ -12,6 +12,8 @@ Microstran `.arc` model. Output: a LaTeX fragment for the report, a preview PDF,
 |---|---|
 | ![knee](docs/img/knee.png) | ![kjoints](docs/img/kjoints.png) |
 | `examples/knee/knee.toml`: a portal-frame knee with purlins, girt, fly brace, L_e | `examples/kjoint/`: SHS K-gap and K-overlap joints (Python API) |
+| ![connections](docs/img/connections.png) | ![fly brace](docs/img/fly_brace_detail.jpg) |
+| `examples/connections/`: knee, splice, cap and base generated from the sections by one `[[connection]]` each; zero clashes | fly brace as built: on the purlin web, cut under the top flange, bolted, cleat at the flange |
 | ![frame](docs/img/frame.png) | ![highlight](docs/img/highlight.png) |
 | `examples/frame_from_model/frame.toml`: three frames straight from a Microstran model | `examples/highlight/`: the plain view, then the same view with a member highlighted and its tributary strip, added without re-rendering |
 
@@ -49,6 +51,16 @@ labels (see `docs/scene-format.md`), and in the report:
 The preamble needs `\usepackage{tikz,graphicx,amsmath}`, `\usetikzlibrary{arrows.meta}`,
 `\definecolor{acc}{rgb}{0.62,0.16,0.10}` and the balloon macro from `steelfig/overlay.py` (`PRE`).
 Word users: use `preview/prev_<name>.png` from `--png`.
+
+## Connections, clashes, finishes
+
+Standard connections are generated from the member sections (`[[connection]] type = "knee" | "splice" | "cap" |
+"base"`): end plates, bolt rows either side of the web, stiffeners in line with the flanges, cap plates on the roof
+slope, base plates with holding-down bolts. The members named in a connection are trimmed to its faces, so
+nothing has to be placed by hand. `check = true` (or `--check`) computes the intersection volume of every pair
+of solids and prints `CLASH` lines for members passing through each other; small, intended overlaps (under
+5 cm³) are ignored. Members get a finish by product type (hot-rolled mill scale, hollow sections, galvanised
+purlins, bolts) from the style sheet; add a finish per grade there if you want C450 to look different from C350.
 
 ## Commands
 

@@ -43,11 +43,11 @@ def run_blender(script, out_dir, extra=()):
     log = r.stdout + r.stderr
     bad = r.returncode != 0 or "Traceback" in log
     lines = [l for l in log.splitlines() if l.strip() and not l.startswith(("Blender ", "Read prefs", "Fra:"))]
-    print("\n".join(lines[-40:] if bad else [l for l in lines if l.startswith(("rendered", "built", "WARNING"))]))
+    print("\n".join(lines[-40:] if bad else [l for l in lines if l.startswith(("rendered", "built", "WARNING", "CLASH", "clash check"))]))
     if bad: sys.exit("Blender failed on %s" % script)
 
 
-def build(scene_path, out_dir, report_dir=None, quick=False, preview=True, png=False):
+def build(scene_path, out_dir, report_dir=None, quick=False, preview=True, png=False, check=False):
     """geometry + renders (Blender), then annotation (overlay) for every view; returns the figure body.
     png=True also rasterises the preview PDF (300 dpi) for Word / slides users."""
     sc = load(scene_path); os.makedirs(out_dir, exist_ok=True)
@@ -56,7 +56,7 @@ def build(scene_path, out_dir, report_dir=None, quick=False, preview=True, png=F
         if not os.path.isabs(md["path"]): md["path"] = os.path.join(base, md["path"])
     if sc.get("style"): os.environ["STEELFIG_STYLE"] = sc["style"] if os.path.isabs(sc["style"]) or "/" not in sc["style"] else os.path.join(base, sc["style"])
     spec = os.path.join(out_dir, "scene.json"); json.dump(sc, open(spec, "w"), indent=1)
-    run_blender(os.path.join(ROOT, "blender", "build_scene.py"), out_dir, [spec] + (["quick"] if quick else []))
+    run_blender(os.path.join(ROOT, "blender", "build_scene.py"), out_dir, [spec] + (["quick"] if quick else []) + (["check=1"] if check else []))
     body = annotate(sc, out_dir, report_dir or out_dir, preview or png)
     if png: to_png(os.path.join(report_dir or out_dir, "preview", "prev_%s.pdf" % (sc.get("figure", {}).get("name") or "figure")))
     return body
@@ -106,9 +106,15 @@ def annotate(sc, out_dir, rep, preview=True):
         part = O.captioned(tik, v["caption"], P.W + 0.4) if v.get("caption") else tik
         parts.append((part, P))
     for k in sc.get("figure", {}).get("key_extra", []): key_all.append(k)
-    F = sc.get("figure", {}); W = F.get("width_cm", max(p.W for _, p in parts) if parts else 14)
+    F = sc.get("figure", {}); W = F.get("width_cm", (max(p.W for _, p in parts) if F.get("layout", "stack") != "grid2" else 15.6) if parts else 14)
     layout = F.get("layout", "stack")
     if layout == "row": body = O.row([p for p, _ in parts])
+    elif layout == "grid2":                                   # two columns: pairs of views side by side
+        rows = []
+        for i in range(0, len(parts), 2):
+            pair = parts[i:i + 2]
+            rows.append(r"\hfill".join(r"\begin{minipage}[t]{%.2fcm}\centering %s\end{minipage}" % (W / 2 - 0.2, p) for p, _ in pair))
+        body = ("\n\n" + r"\vspace{4mm}" + "\n").join(rows)
     else: body = ("\n\n" + r"\vspace{2mm}" + "\n").join(p for p, _ in parts)
     key = O.keycols(key_all, W, F.get("key_cols", 1)) if key_all else ""
     if F.get("key_beside") and len(parts) > 1:
