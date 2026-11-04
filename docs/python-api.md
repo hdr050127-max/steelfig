@@ -17,8 +17,9 @@ Joints: `boolean_cut(target, cutters)`, `solid_prism`, `edge_hits`, `weld_ring`,
 point, normal, hatch)`, `explode(objs, vector)`, `delete`, `all_meshes()`.
 
 Camera / render: `setup(cam_loc, target, lens, res, ortho, line, quick, cam)`; `ortho_view(cam, look, scale, at)`;
-`render(out_dir, name, anchors, margin, bounds_extra, crop_pts)` → png + json (image coordinates and 3D points
-of every anchor). Anchors: `dim3(anch, name, p, q, off)`, `wave(p, q, amp, side)`.
+`render(out_dir, name, anchors, margin, bounds_extra, crop_pts, ids=True)` → png + json (image coordinates and 3D
+points of every anchor, the object-ID colours) + `<name>_id.png` (flat colour per object, for highlights).
+`member_anchors()` → automatic `m.<name>` anchors for every member drawn. Anchors: `dim3(anch, name, p, q, off)`, `wave(p, q, amp, side)`.
 
 ## assembly (inside Blender)
 
@@ -33,7 +34,7 @@ of every anchor). Anchors: `dim3(anch, name, p, q, off)`, `wave(p, q, amp, side)
 
 ## steelfig.overlay (system Python)
 
-`Pic`, `pic_by_height`, `balloon`, `rail`, `keylist`, `keycols`, `row`, `captioned`, `swatch`, `dash`, `flatten`,
+`Pic` (`.highlight(names, colour, alpha, outline, dim)` tints members from the ID render), `pic_by_height`, `balloon`, `rail`, `keylist`, `keycols`, `row`, `captioned`, `swatch`, `dash`, `flatten`,
 `emit`, `preview`, `standalone`, `warnings()`, `STRICT`. Draw items are listed in the module docstring.
 
 ## steelfig.readers

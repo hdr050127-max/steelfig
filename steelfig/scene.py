@@ -74,6 +74,14 @@ def to_png(pdf, dpi=300):
         print("no pdftoppm (brew install poppler) or PyMuPDF: PNG not written; the PDF is at", pdf)
 
 
+def annotate_file(scene_path, out_dir, report_dir=None, preview=True, png=False):
+    """redo only the annotation of an earlier build (labels, highlights, dims) without running Blender."""
+    sc = load(scene_path)
+    body = annotate(sc, out_dir, report_dir or out_dir, preview or png)
+    if png: to_png(os.path.join(report_dir or out_dir, "preview", "prev_%s.pdf" % (sc.get("figure", {}).get("name") or "figure")))
+    return body
+
+
 def annotate(sc, out_dir, rep, preview=True):
     sys.path.insert(0, ROOT)
     from steelfig import overlay as O
@@ -83,9 +91,14 @@ def annotate(sc, out_dir, rep, preview=True):
     for v in sc.get("view", []):
         vn = v["name"]
         O.flatten(os.path.join(out_dir, vn + ".png"), os.path.join(rep, img_dir, vn + ".jpg"))
-        jp = os.path.join(out_dir, vn + ".json")
+        jp = os.path.join(out_dir, vn + ".json"); jf = os.path.join(rep, img_dir, vn + ".jpg")
         P = O.pic_by_height(os.path.join(img_dir, vn + ".jpg"), jp, v["height_cm"], v.get("max_width_cm", 16)) if "height_cm" in v \
             else O.Pic(os.path.join(img_dir, vn + ".jpg"), jp, v.get("width_cm", 14))
+        P.file = jf
+        for i, hl in enumerate(v.get("highlight", [])):
+            P.highlight(hl["objects"], hl.get("colour", "#c9553f"), hl.get("alpha", 0.45), hl.get("outline", 0), hl.get("dim", 0.0),
+                        out=os.path.join(rep, img_dir, "%s_hl%s.jpg" % (vn, i or "")))
+            P.png = os.path.join(img_dir, "%s_hl%s.jpg" % (vn, i or ""))
         labels = [(l["anchor"], l.get("text", ""), l.get("dx", 0.8), l.get("dy", 0.8)) + ((l["num"],) if "num" in l else ()) for l in v.get("label", [])]
         draw = [tuple(d) for d in v.get("draw", [])]
         tik, key = O.balloon(P, labels, draw, start=len(key_all) + 1 if v.get("continue_numbers", True) else 1)

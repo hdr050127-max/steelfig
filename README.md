@@ -12,8 +12,8 @@ Microstran `.arc` model. Output: a LaTeX fragment for the report, a preview PDF,
 |---|---|
 | ![knee](docs/img/knee.png) | ![kjoints](docs/img/kjoints.png) |
 | `examples/knee/knee.toml`: a portal-frame knee with purlins, girt, fly brace, L_e | `examples/kjoint/`: SHS K-gap and K-overlap joints (Python API) |
-| ![frame](docs/img/frame.png) | |
-| `examples/frame_from_model/frame.toml`: three frames straight from a Microstran model | |
+| ![frame](docs/img/frame.png) | ![highlight](docs/img/highlight.png) |
+| `examples/frame_from_model/frame.toml`: three frames straight from a Microstran model | `examples/highlight/`: the plain view, then the same view with a member highlighted and its tributary strip, added without re-rendering |
 
 ## Install
 
@@ -31,8 +31,10 @@ bin/steelfig build examples/knee/knee.toml /tmp/knee_out --report /tmp/knee_rep 
 open /tmp/knee_rep/preview/prev_knee.pdf
 ```
 
-`--quick` renders at half size to check the composition; drop it for the final. Then copy the scene file, change
-the sections, points and labels (see `docs/scene-format.md`), and in the report:
+`--quick` renders at half size to check the composition; drop it for the final. Rendering and annotation are
+separate: once a view is rendered you can add labels, tint a member (`highlight`), fill a region, add dimensions
+and rerun `steelfig annotate …` in under a second. Then copy the scene file, change the sections, points and
+labels (see `docs/scene-format.md`), and in the report:
 
 ```latex
 \begin{figure}[!htbp]\centering
@@ -49,6 +51,7 @@ Word users: use `preview/prev_<name>.png` from `--png`.
 
 ```
 steelfig build <scene.toml> <out_dir> [--report <dir>] [--quick] [--no-preview] [--png]
+steelfig annotate <scene.toml> <out_dir> [--report <dir>] [--png]     # labels / highlights only, no Blender
 steelfig render <fig.py> <out_dir> [quick] [cam=x,y,z,tx,ty,tz,lens]
 steelfig sections <query>        # e.g. 360UB, "x8 EA", 150x150, CHS
 steelfig model <file.arc>        # nodes, members, property names of an analysis model

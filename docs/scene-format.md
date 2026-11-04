@@ -14,6 +14,10 @@ Any point, vector or number may be a string expression. Available names:
 | `sec("310UB46.2")` | profile dict: `["d"]`, `["b"]`, `["tf"]`, `["tw"]`, `["t"]` in metres |
 | `m.col.a`, `m.col.b` | end points of the member named `col` (declared earlier) |
 | `pur[3]` | the fourth purlin's point on the line (from `[[purlins]] name = "pur"`) |
+
+Automatic anchors: every member gets `m.<name>` (midpoint), `m.<name>.a`, `m.<name>.b` (ends) without declaring
+anything, so a label can say `anchor = "m.raf"`. Model members are called `m<id>` for the first frame and
+`m<id>_<y>` for copies (`m.m101_11.315`).
 | `math` | Python's math module |
 
 A point may also be `[x, y, z]` or `[x, z]` (y = 0).
@@ -61,6 +65,9 @@ bounds = ["wave", …]                      # anchors that must stay inside the 
 width_cm = 14  |  height_cm = 5.5  max_width_cm = 7     # size on the page
 caption = "…"                             # small caption under this view
 draw = [["dim3", "le", "$L_e = 2400$", "below"], ["line", ["wave"], "line width=0.8pt, densely dashed, acc"], …]
+highlight = [{ objects = ["raf"], colour = "#c9553f", alpha = 0.55, outline = 2, dim = 0.35 }]
+                                          # tint members on the picture after rendering (from the ID render), outline
+                                          # them (px), fade everything else towards white; names or prefixes
   [[view.label]]  anchor = "col"  text = "…"  dx = 1.3  dy = -0.5  num = 3    # balloon (dx, dy in cm); num repeats a number
 
 [figure]
@@ -76,6 +83,15 @@ image_dir = "images/steelfig"
 `draw` items: `line`, `fill`, `arrow`, `dim`, `dim3`, `angle`, `text`, `grid`, `letter`, `detail`, `cutline`,
 `support`, `raw`, as documented in `steelfig/overlay.py`. Every `dim`/`dim3` text is checked against the model
 distance and a mismatch is printed as a WARNING. A 2D `dim` on a perspective view is also warned.
+
+## Two-stage work
+
+A build renders every view once (`<view>.png` plus `<view>_id.png`, a flat-colour image that says which pixel
+belongs to which object). Labels, highlights, fills and dimensions are drawn afterwards from those files, so you can
+start with a view that has no annotation at all, then add `[[view.label]]`, `highlight`, `draw` items and rerun
+only `steelfig annotate scene.toml out/ --report rep/` (no Blender, under a second). Re-render only when the
+geometry or the camera changes. A region (tributary area, panel zone) is a `fill` over a polygon of 3D anchors;
+a member is a `highlight`. See `examples/highlight/`.
 
 ## Output
 

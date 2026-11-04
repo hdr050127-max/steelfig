@@ -34,7 +34,7 @@ _mats = {}
 def reset():
     """empty scene; call once per figure (or per shot when several figures share a script)."""
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    _mats.clear()
+    _mats.clear(); MEMBERS.clear()
 
 
 def mat(name, rgba, rough=0.55, metal=0.0):
@@ -145,6 +145,17 @@ def _tube(name, p0, p1, outer, inner, material, up, cut0=None, cut1=None):
 
 
 # ---------------------------------------------------------------- members
+MEMBERS = {}          # name -> (p0, p1, designation) of every member() call, for automatic anchors
+
+
+def member_anchors(prefix="m."):
+    """anchors for every member drawn with member(): <prefix><name> = midpoint, .a / .b = ends."""
+    out = {}
+    for n, (a, b, d) in MEMBERS.items():
+        out[prefix + n] = tuple((a + b) / 2); out[prefix + n + ".a"] = tuple(a); out[prefix + n + ".b"] = tuple(b)
+    return out
+
+
 def shs(name, p0, p1, b, t, material, up=Vector((0, 1, 0)), cut0=None, cut1=None):
     """square hollow section, outer b, wall t (true thickness)."""
     return rhs(name, p0, p1, b, b, t, material, up, cut0, cut1)
@@ -185,6 +196,7 @@ def member(name, p0, p1, designation, material, up=(0, 0, 1), cut0=None, cut1=No
     line), "heel" (angles and purlins: the line is the heel / bottom flange, which is the profile origin).
     flip mirrors the profile across the u axis (Z purlins alternating, channel toes the other way)."""
     P = SEC_DB.profile(designation, min_t=min_t)
+    MEMBERS[name] = (Vector(p0), Vector(p1), designation)
     us = [u for u, v in P.get("pts", P.get("outer"))]
     off = {"centroid": 0.0, "top": -max(us), "bottom": -min(us), "heel": 0.0}[align]
     if align == "centroid" and P["row"]["type"] in ("EA", "UA", "Z", "C", "PFC"):
@@ -437,7 +449,30 @@ def wave(p, q, amp, side, n=20):
     return [tuple(p + (q - p) * u + side * amp * math.sin(math.pi * u)) for u in [i / n for i in range(n + 1)]]
 
 
-def render(out_dir, name, anchors=None, margin=0.02, bounds_extra=(), crop_pts=None):
+def _id_colour(i):
+    """index 1.. -> distinct sRGB colour (steps of 51 on each channel: 125 ids), returned as (sRGB tuple, linear rgba)."""
+    i = int(i); r, g, b = (i % 5) * 51, ((i // 5) % 5) * 51, ((i // 25) % 5) * 51
+    lin = lambda c: (c / 255) / 12.92 if c / 255 <= 0.04045 else (((c / 255) + 0.055) / 1.055) ** 2.4
+    return (r, g, b), (lin(r), lin(g), lin(b), 1.0)
+
+
+def render_ids(path):
+    """flat-colour render of the same view (Workbench, no outlines, no anti-aliasing): every mesh object in its own
+    colour, so the overlay can tint or outline a member after the fact. Returns {object name: [r, g, b]} sRGB."""
+    sc = bpy.context.scene; keep = dict(engine=sc.render.engine, fs=sc.render.use_freestyle, fp=sc.render.filepath, dither=sc.render.dither_intensity)
+    ids = {}
+    for i, ob in enumerate(o for o in sc.objects if o.type == 'MESH'):
+        srgb, lin = _id_colour(i + 1); ob.color = lin; ids[ob.name] = list(srgb)
+    sc.render.engine = 'BLENDER_WORKBENCH'; sc.render.use_freestyle = False; sc.render.dither_intensity = 0
+    sh = sc.display.shading; sh.light = 'FLAT'; sh.color_type = 'OBJECT'; sh.show_object_outline = False
+    sh.show_shadows = False; sh.show_cavity = False; sh.show_xray = False
+    sc.display.render_aa = 'OFF'
+    sc.render.filepath = path; bpy.ops.render.render(write_still=True)
+    sc.render.engine = keep["engine"]; sc.render.use_freestyle = keep["fs"]; sc.render.filepath = keep["fp"]; sc.render.dither_intensity = keep["dither"]
+    return ids
+
+
+def render(out_dir, name, anchors=None, margin=0.02, bounds_extra=(), crop_pts=None, ids=True):
     """render to <out_dir>/<name>.png cropped to the projected meshes (+ extra points, + margin) and write
     <out_dir>/<name>.json with the image size and every anchor mapped to (u, v) in [0, 1] of the cropped image
     (v up). Anchors may be a point or a list of points (polylines, arrow pairs). crop_pts fixes the crop instead."""
@@ -470,8 +505,9 @@ def render(out_dir, name, anchors=None, margin=0.02, bounds_extra=(), crop_pts=N
     res = [round(sc.render.resolution_x * (u1 - u0)), round(sc.render.resolution_y * (v1 - v0))]
     a3 = {k: ([list(q) for q in p] if isinstance(p, list) and p and not isinstance(p[0], (int, float)) else list(p))
           for k, p in ((k, list(p) if not isinstance(p, Vector) else list(p)) for k, p in anchors.items())}
-    json.dump(dict(res=res, anchors=out, anchors3d=a3, ortho=sc.camera.data.type == 'ORTHO'), open(os.path.join(out_dir, name + ".json"), "w"), indent=1)
-    print("rendered", sc.render.filepath, res)
+    idmap = render_ids(os.path.join(out_dir, name + "_id.png")) if ids else {}
+    json.dump(dict(res=res, anchors=out, anchors3d=a3, ortho=sc.camera.data.type == 'ORTHO', ids=idmap), open(os.path.join(out_dir, name + ".json"), "w"), indent=1)
+    print("rendered", os.path.join(out_dir, name + ".png"), res)
 
 
 render2 = lambda path, anchors, json_path, **kw: render(os.path.dirname(path), os.path.splitext(os.path.basename(path))[0], anchors, **kw)

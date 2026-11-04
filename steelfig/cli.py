@@ -1,6 +1,7 @@
 """steelfig command line.
   steelfig build <scene.toml> <out_dir> [--report <dir>] [--quick] [--no-preview] [--png]
                                               TOML scene -> renders, fig_<name>.tex, preview PDF (+ PNG for Word)
+  steelfig annotate <scene.toml> <out_dir> [--report <dir>] [--png]                 redo labels / highlights only (no Blender)
   steelfig render <fig.py> <out_dir> [quick] [cam=...]                               run a Python figure script in Blender
   steelfig sections <query>                                                          search the catalogue (e.g. "360UB", "SHS", "x8 EA")
   steelfig model <file.arc|nodes.csv>                                                summarise an analysis model
@@ -24,6 +25,13 @@ def main(argv=None):
         png = "--png" in a
         if png: a.remove("--png")
         scene.build(a[0], a[1], rep, quick, prev, png); return 0
+    if cmd == "annotate":
+        from steelfig import scene
+        rep = None
+        if "--report" in a: i = a.index("--report"); rep = a[i + 1]; del a[i:i + 2]
+        png = "--png" in a
+        if png: a.remove("--png")
+        scene.annotate_file(a[0], a[1], rep, True, png); return 0
     if cmd == "render":
         from steelfig import scene
         scene.run_blender(a[0], a[1], a[2:]); return 0

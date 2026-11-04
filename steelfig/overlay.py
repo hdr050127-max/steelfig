@@ -52,10 +52,45 @@ GRIDL = CL
 
 
 class Pic:
-    def __init__(self, png, json_path, width_cm):
+    def __init__(self, png, json_path, width_cm, file=None):
+        """png: the image path as the report sees it; json_path: the render JSON; width_cm on the page;
+        file: the image's real path on disk (needed for highlight), default = png resolved from cwd."""
         J = json.load(open(json_path)); rx, ry = J["res"]
         self.png, self.A, self.W = png, J["anchors"], width_cm; self.H = width_cm * ry / rx
-        self.A3 = J.get("anchors3d", {}); self.ortho = J.get("ortho", False)
+        self.A3 = J.get("anchors3d", {}); self.ortho = J.get("ortho", False); self.ids = J.get("ids", {})
+        self.file = file or png; self.idpng = json_path[:-5] + "_id.png"
+
+    def objects(self, names):
+        """object names matching a list of names or prefixes (a member 'raf' also matches its copies 'raf_11.315')."""
+        out = []
+        for n in names:
+            hits = [o for o in self.ids if o == n or o.startswith(n + "_") or o.startswith(n + "+") or o.startswith(n + "-")]
+            if not hits: warn("highlight: no object called %r in this render (known: %s)" % (n, ", ".join(sorted(self.ids))[:300]))
+            out += hits
+        return out
+
+    def highlight(self, names, colour="#c9553f", alpha=0.45, outline=0, dim=0.0, out=None):
+        """tint the listed members on the picture (from the ID render), optionally outline them (px) and fade
+        everything else towards white by `dim`. Writes a new image next to the original (…_hl.jpg) and uses it."""
+        from PIL import Image, ImageChops, ImageFilter
+        im = Image.open(self.file).convert("RGB")
+        idm = Image.open(self.idpng).convert("RGB").resize(im.size, Image.NEAREST)
+        mask = Image.new("L", im.size, 0)
+        for o in self.objects(names):
+            r, g, b = self.ids[o]
+            d = ImageChops.difference(idm, Image.new("RGB", im.size, (r, g, b))).convert("L").point(lambda v: 255 if v < 3 else 0)
+            mask = ImageChops.lighter(mask, d)
+        h = colour.lstrip("#"); rgb = tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+        res = im
+        if dim: res = Image.composite(res, Image.blend(res, Image.new("RGB", im.size, (255, 255, 255)), dim), mask)
+        if alpha: res = Image.composite(Image.blend(res, Image.new("RGB", im.size, rgb), alpha), res, mask)
+        if outline:
+            edge = mask.filter(ImageFilter.FIND_EDGES).filter(ImageFilter.MaxFilter(2 * int(outline) + 1)).point(lambda v: 255 if v > 0 else 0)
+            res = Image.composite(Image.new("RGB", im.size, rgb), res, edge)
+        out = out or (os.path.splitext(self.file)[0] + "_hl.jpg")
+        res.save(out, quality=92)
+        self.file = out; self.png = os.path.splitext(self.png)[0] + "_hl" + os.path.splitext(out)[1]
+        return self
 
     def p3(self, key):
         """3D point (metres) of an anchor, when the render stored it."""

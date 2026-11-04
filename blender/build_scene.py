@@ -90,8 +90,9 @@ for cut in sc.get("section_cut", []):
 for ex in sc.get("explode", []):
     B.explode([o for o in B.all_meshes() if o.name in ex["objects"] or o.name.split("_")[0] in ex["objects"]], ex["vector"])
 
-# anchors, dimensions, waves
-An = {k: (tuple(pt(v)) if not (isinstance(v, list) and v and isinstance(v[0], (list, str))) else [tuple(pt(q)) for q in v]) for k, v in sc.get("anchors", {}).items()}
+# anchors: automatic ones for every member (m.<name>, m.<name>.a, m.<name>.b), then the scene's own
+An = B.member_anchors()
+An.update({k: (tuple(pt(v)) if not (isinstance(v, list) and v and isinstance(v[0], (list, str))) else [tuple(pt(q)) for q in v]) for k, v in sc.get("anchors", {}).items()})
 for d in sc.get("dim", []):
     B.dim3(An, d["name"], pt(d["a"]), pt(d["b"]), pt(d["off"]))
 for w in sc.get("wave", []):
@@ -109,7 +110,10 @@ for v in sc.get("view", []):
         a = An[k]; extra += a if isinstance(a, list) else [a]
     for d in v.get("draw", []):
         if d[0] == "dim3": extra += [An[d[1] + "_a2"], An[d[1] + "_b2"]]
-        if d[0] == "line": extra += sum((An[k] if isinstance(An[k], list) else [An[k]] for k in d[1]), [])
+        if d[0] in ("line", "fill"):
+            for k in d[1]:
+                k = k.split("#")[0]
+                if k in An: extra += An[k] if isinstance(An[k], list) else [An[k]]
     crop = [tuple(pt(q)) for q in v["crop"]] if "crop" in v else None
     B.render(out, v["name"], An, bounds_extra=extra, crop_pts=crop, margin=v.get("margin", 0.02))
     # the camera is rebuilt per view: remove it and the lights so the next setup() starts clean
