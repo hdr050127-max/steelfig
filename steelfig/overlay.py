@@ -346,9 +346,12 @@ def emit(path, body, generator=None):
 
 
 def pdflatex():
-    for p in (shutil.which("pdflatex"), os.path.expanduser("~/Library/TinyTeX/bin/universal-darwin/pdflatex"), "/Library/TeX/texbin/pdflatex"):
+    import glob
+    h = os.path.expanduser("~")
+    for p in ([shutil.which("pdflatex"), "/Library/TeX/texbin/pdflatex"] + glob.glob(os.path.join(h, "Library", "TinyTeX", "bin", "*", "pdflatex"))
+              + glob.glob(os.path.join(h, ".TinyTeX", "bin", "*", "pdflatex")) + glob.glob(os.path.join(h, "AppData", "Roaming", "TinyTeX", "bin", "*", "pdflatex.exe"))):
         if p and os.path.exists(p): return p
-    raise FileNotFoundError("pdflatex not found (TinyTeX ~/Library/TinyTeX/bin/universal-darwin)")
+    raise FileNotFoundError("pdflatex not found (TinyTeX, MacTeX or MiKTeX; `setup.py --install` installs TinyTeX)")
 
 
 def preview_doc(src, out_dir, name, cwd=None):

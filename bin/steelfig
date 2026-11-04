@@ -1,2 +1,5 @@
 #!/bin/sh
-exec python3 "$(dirname "$0")/../steelfig/cli.py" "$@"
+# steelfig command. Uses $STEELFIG_PYTHON, else the interpreter recorded by setup.py in <repo>/.python, else python3.
+HERE="$(cd "$(dirname "$0")/.." && pwd)"
+PY="${STEELFIG_PYTHON:-$(cat "$HERE/.python" 2>/dev/null || echo python3)}"
+exec "$PY" "$HERE/steelfig/cli.py" "$@"

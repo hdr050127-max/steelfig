@@ -92,7 +92,11 @@ def main(argv=None):
         try: print("pdflatex:", overlay.pdflatex())
         except FileNotFoundError as e: print("pdflatex: missing - annotated figures will be written as PNG (Pillow); install TinyTeX/MiKTeX for LaTeX fragments and PDF previews")
         import shutil as _sh
-        print("pdftoppm:", _sh.which("pdftoppm") or "missing (PNG of the PDF preview needs poppler or PyMuPDF; not required)")
+        try: import pymupdf; mu = "PyMuPDF " + pymupdf.__version__.split()[0] if hasattr(pymupdf, "__version__") else "PyMuPDF"
+        except ImportError:
+            try: import fitz; mu = "PyMuPDF (fitz)"
+            except ImportError: mu = None
+        print("pdf->png:", _sh.which("pdftoppm") or mu or "missing (PNG of the PDF preview needs poppler's pdftoppm or `pip install pymupdf`; not required)")
         print("data    :", os.path.join(ROOT, "steelfig", "data"), "+", os.environ.get("STEELFIG_DATA", "(set STEELFIG_DATA for your own CSVs)"))
         print("Python  :", sys.version.split()[0]); return 0
     print("unknown command", cmd); print(__doc__); return 2

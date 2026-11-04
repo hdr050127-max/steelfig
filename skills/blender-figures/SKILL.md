@@ -7,16 +7,26 @@ description: "True-size 3D figures of steel structures for reports and teaching,
 
 ## Step 0, every time: `python3 <this skill folder>/scripts/setup.py`
 
-It clones the `steelfig` repository (https://github.com/hdr050127-max/steelfig) to `~/steelfig` on first use,
-updates it on later uses (fast-forward only), prints `STEELFIG_HOME=<path>` and the doctor report (Blender,
-Pillow, pdflatex). Use that path for everything below; `steelfig` means `<path>/bin/steelfig`
-(`bin\steelfig.cmd` on Windows). Everything the tool needs travels with the repository: catalogue tables
+It fetches the `steelfig` repository (https://github.com/hdr050127-max/steelfig) to `~/steelfig` on first use
+(git clone, or a zip download when git is missing), updates it on later uses (fast-forward only), picks a
+Python 3.11+ interpreter and records it in `<path>/.python`, prints `STEELFIG_HOME=<path>` and the doctor report
+(Blender, Pillow, pdflatex, PyMuPDF). Use that path for everything below; `steelfig` means `<path>/bin/steelfig`
+(`bin\steelfig.cmd` on Windows).
+
+**If the doctor reports something missing**, do not work around it silently and do not install anything on your
+own: tell the person in one short message what `setup.py --install` would put on their machine and ask once:
+Pillow and PyMuPDF with `pip install --user` (about 25 MB; needed), TinyTeX in their home folder (about 120 MB;
+only for LaTeX fragments and PDF previews, otherwise the annotated figures come out as PNG), Blender through
+Homebrew, winget or snap (about 350 MB; required, there is no fallback). They can skip parts with `--no-tex` and
+`--no-blender`. Run `python3 <this skill folder>/scripts/setup.py --install` only after they agree, then re-run
+the doctor. If no package manager exists, give them the download link the script prints and wait.
+
+Everything the tool needs travels with the repository: catalogue tables
 (`steelfig/data`), detail knowledge with its sources (`docs/details`, `docs/details/sources`), examples, styles,
 and the shared **`resources/`** folder (catalogues / details / models / styles / local). `steelfig resources`
 lists what the person has dropped in there; read a file there before guessing a rule, cite it in the rationale,
 and when the person gives you a catalogue, a drawing or a model, put it in the matching subfolder (private
-material under `resources/local/`, which is never committed). Without pdflatex the annotated figure comes out as
-PNG; say so rather than installing TeX for them.
+material under `resources/local/`, which is never committed).
 
 Read `README.md` first, `docs/scene-format.md` before writing a scene, `docs/figure-style.md` for the look the
 figures must have (grey line-art like a fabricator's manual, one accent colour, no text on the picture, parts

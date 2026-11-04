@@ -20,7 +20,7 @@ with d, b, tf, tw, t in metres), math, and m.<member name>.a / .b (its end point
 
 The TOML is compiled to JSON (Blender has no TOML reader for arbitrary paths? it does: tomllib) and executed by
 blender/build_scene.py; the annotation runs here with overlay.py."""
-import os, sys, json, subprocess, tomllib, shutil
+import os, sys, json, subprocess, tomllib, shutil, glob
 
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
 
@@ -31,7 +31,7 @@ def load(path):
 
 def blender():
     for p in (os.environ.get("BLENDER"), "/Applications/Blender.app/Contents/MacOS/Blender", shutil.which("blender"),
-              r"C:\Program Files\Blender Foundation\Blender\blender.exe"):
+              r"C:\Program Files\Blender Foundation\Blender\blender.exe", *sorted(glob.glob(r"C:\Program Files\Blender Foundation\Blender*\blender.exe"), reverse=True)):
         if p and os.path.exists(p): return p
     sys.exit("Blender not found: install it or set BLENDER=/path/to/blender")
 

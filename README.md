@@ -19,16 +19,32 @@ Microstran `.arc` model. Output: a LaTeX fragment for the report, a preview PDF,
 
 ## Install
 
+The quick way, on any machine with Python 3 (the system one is enough to start):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/hdr050127-max/steelfig/main/skills/blender-figures/scripts/setup.py -o setup.py && python3 setup.py --install
+```
+
+`setup.py` fetches the repository to `~/steelfig` (git, or a zip download without git), finds or installs a
+Python 3.11+ interpreter, and `--install` adds what the doctor reports missing: Pillow and PyMuPDF (`pip install
+--user`), TinyTeX with the tikz packages in your home folder (macOS/Linux; MiKTeX via winget on Windows), and
+Blender through Homebrew, winget or snap. `--no-tex` and `--no-blender` skip the big ones. Without a package
+manager it prints the download links. Nothing goes system-wide except Blender through the package manager.
+
+By hand:
+
 1. [Blender](https://www.blender.org/download/) 4.2 or later (5.x tested). macOS: `/Applications/Blender.app`;
    elsewhere put `blender` on the PATH or set `BLENDER=/path/to/blender`.
-2. Python 3.11+ with Pillow: `pip install pillow` (only for flattening the renders to JPEG).
-3. For preview PDFs and LaTeX reports: any TeX (TinyTeX, MacTeX, MiKTeX) with `pdflatex`. For PNG output:
-   `pdftoppm` (`brew install poppler`) or `pip install pymupdf`.
+2. Python 3.11+ with Pillow: `pip install pillow` (flattening the renders to JPEG, PNG annotation without LaTeX).
+3. For preview PDFs and LaTeX reports: any TeX (TinyTeX, MacTeX, MiKTeX) with `pdflatex`. For PNG output of the
+   PDF preview: `pdftoppm` (`brew install poppler`) or `pip install pymupdf`.
 4. Get the tool and check the setup:
 
 ```bash
 git clone https://github.com/hdr050127-max/steelfig ~/steelfig && ~/steelfig/bin/steelfig doctor
 ```
+
+`bin/steelfig` runs `$STEELFIG_PYTHON`, else the interpreter recorded in `.python` by setup.py, else `python3`.
 
 ### Windows and machines without TeX
 
