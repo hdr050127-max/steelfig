@@ -10,23 +10,25 @@ description: "True-size 3D figures of steel structures for reports and teaching,
 On Windows run it with `python` or `py -3` (the `python3` name there is usually the Microsoft Store stub), and
 use `bin\steelfig.cmd` wherever this file says `steelfig`.
 
-If `python3` itself is missing (a Mac without the command line tools, a bare Windows), stop and ask the person to
-install Python 3.12 from https://www.python.org/downloads/ (macOS alternative: `xcode-select --install`); the
-script cannot run before that.
+If `python3` itself is missing (a Mac without the command line tools, a bare Windows), the script cannot run yet.
+macOS: `xcode-select --install` (one confirmation dialog) gives python3 and git; Windows: `winget install
+Python.Python.3.12` in a new terminal; otherwise https://www.python.org/downloads/ . Then re-run it.
 
 It fetches the `steelfig` repository (https://github.com/hdr050127-max/steelfig) to `~/steelfig` on first use
 (git clone, or a zip download when git is missing), updates it on later uses (fast-forward only), picks a
-Python 3.11+ interpreter and records it in `<path>/.python`, prints `STEELFIG_HOME=<path>` and the doctor report
+Python interpreter (3.9+ works, 3.11+ preferred) and records it in `<path>/.python`, prints `STEELFIG_HOME=<path>` and the doctor report
 (Blender, Pillow, pdflatex, PyMuPDF). Use that path for everything below; `steelfig` means `<path>/bin/steelfig`
 (`bin\steelfig.cmd` on Windows).
 
 **If the doctor reports something missing**, do not work around it silently and do not install anything on your
 own: tell the person in one short message what `setup.py --install` would put on their machine and ask once:
-Pillow and PyMuPDF with `pip install --user` (about 25 MB; needed), TinyTeX in their home folder (about 120 MB;
-only for LaTeX fragments and PDF previews, otherwise the annotated figures come out as PNG), Blender through
-Homebrew, winget or snap (about 350 MB; required, there is no fallback). They can skip parts with `--no-tex` and
+Pillow and PyMuPDF (and `tomli` below Python 3.11) with `pip install --user` (about 25 MB; needed), TinyTeX in
+their home folder (about 120 MB; only for LaTeX fragments and PDF previews, otherwise the annotated figures come
+out as PNG), Blender through Homebrew, winget or snap, or straight from download.blender.org when there is no
+package manager (about 350 MB; required, there is no fallback). All of it is command line, nothing needs
+administrator rights. They can skip parts with `--no-tex` and
 `--no-blender`. Run `python3 <this skill folder>/scripts/setup.py --install` only after they agree, then re-run
-the doctor. If no package manager exists, give them the download link the script prints and wait.
+the doctor. `--dry-run` shows what would be fetched from where without changing anything.
 
 Everything the tool needs travels with the repository: catalogue tables
 (`steelfig/data`), detail knowledge with its sources (`docs/details`, `docs/details/sources`), examples, styles,

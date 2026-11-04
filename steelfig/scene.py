@@ -20,7 +20,9 @@ with d, b, tf, tw, t in metres), math, and m.<member name>.a / .b (its end point
 
 The TOML is compiled to JSON (Blender has no TOML reader for arbitrary paths? it does: tomllib) and executed by
 blender/build_scene.py; the annotation runs here with overlay.py."""
-import os, sys, json, subprocess, tomllib, shutil, glob
+import os, sys, json, subprocess, shutil, glob
+try: import tomllib
+except ImportError: import tomli as tomllib          # Python 3.9 / 3.10: pip install tomli
 
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
 
@@ -30,10 +32,12 @@ def load(path):
 
 
 def blender():
-    for p in (os.environ.get("BLENDER"), "/Applications/Blender.app/Contents/MacOS/Blender", shutil.which("blender"),
+    rec = os.path.join(ROOT, ".blender")
+    rec = open(rec, encoding="utf-8").read().strip() if os.path.exists(rec) else None     # written by setup.py
+    for p in (os.environ.get("BLENDER"), rec, "/Applications/Blender.app/Contents/MacOS/Blender", os.path.expanduser("~/Applications/Blender.app/Contents/MacOS/Blender"), shutil.which("blender"),
               r"C:\Program Files\Blender Foundation\Blender\blender.exe", *sorted(glob.glob(r"C:\Program Files\Blender Foundation\Blender*\blender.exe"), reverse=True)):
         if p and os.path.exists(p): return p
-    sys.exit("Blender not found: install it or set BLENDER=/path/to/blender")
+    sys.exit("Blender not found: run the skill's setup.py --install, or install it and set BLENDER=/path/to/blender")
 
 
 def run_blender(script, out_dir, extra=()):
@@ -160,7 +164,7 @@ def build_all(target, out_root, report_dir=None, quick=False, check=False):
         for k, v in defaults.items(): sc["figure"].setdefault(k, v)
         od = os.path.join(out_root, name); os.makedirs(od, exist_ok=True)
         tmp = os.path.join(od, "scene_set.toml")
-        import tomllib  # noqa
+        pass
         # write the merged scene back as TOML-free JSON path: build() expects a TOML, so keep the original and pass overrides
         from steelfig import overlay as O
         O._warn.clear()

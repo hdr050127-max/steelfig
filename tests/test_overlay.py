@@ -48,6 +48,8 @@ class Overlay(unittest.TestCase):
 
     def test_preview_relative_out_dir(self):
         """a relative out_dir (steelfig build ... --report rep) must not be resolved twice when cwd is also set."""
+        try: O.pdflatex()
+        except FileNotFoundError: self.skipTest("no pdflatex on this machine")
         with tempfile.TemporaryDirectory() as tmp:
             rep = os.path.join(tmp, "rep"); os.makedirs(rep)
             old = os.getcwd(); os.chdir(tmp)

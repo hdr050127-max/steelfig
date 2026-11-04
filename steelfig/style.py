@@ -1,6 +1,8 @@
 """Style sheets: one TOML per report or course, read by both the Blender side (materials, line weight) and the
 overlay (accent colour, fonts). steelfig/styles/default.toml is the house style."""
-import os, tomllib
+import os
+try: import tomllib
+except ImportError: import tomli as tomllib          # Python 3.9 / 3.10: pip install tomli
 
 STYLES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "styles")
 

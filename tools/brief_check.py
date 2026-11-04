@@ -6,7 +6,9 @@ dims:  every entry must appear in a dim / dim3 draw item's text
 views: every entry must be a [[view]] name
 build log (if given): must contain no WARNING / CLASH / REALISM / ERROR lines
 Exit 1 with one line per miss."""
-import sys, tomllib, re
+import sys, re
+try: import tomllib
+except ImportError: import tomli as tomllib          # Python 3.9 / 3.10: pip install tomli
 
 
 def norm(s):
