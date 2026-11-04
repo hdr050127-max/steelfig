@@ -85,7 +85,7 @@ def place_balloons(pic, labels, occ=None, margin=0.45, radii=(0.9, 1.3, 1.8, 2.4
                 cost = 0.0
                 cost += 6.0 * occ.disc(bx, by, R_BALL * 1.3)                              # balloon over steel
                 cost += 1.5 * occ.segment((ax, ay), (bx, by))                             # leader over steel
-                cost += 0.35 * r                                                          # short leaders
+                cost += 0.55 * r                                                          # short leaders (the look depends on it)
                 cost += 0.6 * (1 - math.cos(a - away))                                    # outward
                 ox = max(0, -margin - bx, bx - pic.W - margin); oy = max(0, -margin - by, by - pic.H - margin)
                 cost += 8.0 * (ox + oy)                                                   # outside the box
@@ -93,13 +93,35 @@ def place_balloons(pic, labels, occ=None, margin=0.45, radii=(0.9, 1.3, 1.8, 2.4
                     dd = math.dist((bx, by), (pbx, pby))
                     if dd < 2.6 * R_BALL: cost += 6.0
                     elif dd < 0.8: cost += 1.5 * (0.8 - dd)
-                    if _cross((ax, ay), (bx, by), (pax, pay), (pbx, pby)): cost += 4.0
+                    if _cross((ax, ay), (bx, by), (pax, pay), (pbx, pby)): cost += 15.0      # crossing leaders are never acceptable
                     if math.dist((bx, by), (pax, pay)) < 0.4: cost += 2.0
                 for (fx, fy) in fixed:
                     if math.dist((bx, by), (fx, fy)) < 0.7: cost += 3.0
                 if best is None or cost < best[0]: best = (cost, bx, by)
         _, bx, by = best; placed.append((ax, ay, bx, by))
         res[i] = (k, text, round(bx - ax, 2), round(by - ay, 2)) + tuple(lab[4:])
+    # second pass: each automatic balloon is re-chosen against the final positions of all the others
+    auto_idx = [i for i in range(len(labels)) if labels[i][2] is None or labels[i][3] is None]
+    for i in auto_idx:
+        k = res[i][0]; ax, ay = pic.pts(k)[0]
+        others = [(pic.pts(res[j][0])[0][0], pic.pts(res[j][0])[0][1], pic.pts(res[j][0])[0][0] + res[j][2], pic.pts(res[j][0])[0][1] + res[j][3]) for j in range(len(res)) if j != i]
+        best = None
+        for r in radii:
+            for d in range(n_dir):
+                a = 2 * math.pi * d / n_dir; bx, by = ax + r * math.cos(a), ay + r * math.sin(a)
+                cost = 6.0 * occ.disc(bx, by, R_BALL * 1.3) + 1.5 * occ.segment((ax, ay), (bx, by)) + 0.55 * r + 0.6 * (1 - math.cos(a - away))
+                ox = max(0, -margin - bx, bx - pic.W - margin); oy = max(0, -margin - by, by - pic.H - margin); cost += 8.0 * (ox + oy)
+                for (pax, pay, pbx, pby) in others:
+                    dd = math.dist((bx, by), (pbx, pby))
+                    if dd < 2.6 * R_BALL: cost += 6.0
+                    elif dd < 0.8: cost += 1.5 * (0.8 - dd)
+                    if _cross((ax, ay), (bx, by), (pax, pay), (pbx, pby)): cost += 15.0
+                    if math.dist((bx, by), (pax, pay)) < 0.4: cost += 2.0
+                for (fx, fy) in fixed:
+                    if math.dist((bx, by), (fx, fy)) < 0.7: cost += 3.0
+                if best is None or cost < best[0]: best = (cost, bx, by)
+        _, bx, by = best
+        res[i] = (k, res[i][1], round(bx - ax, 2), round(by - ay, 2)) + tuple(res[i][4:])
     return res
 
 

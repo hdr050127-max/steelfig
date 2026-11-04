@@ -1,16 +1,17 @@
-# steelfig default style (CIVL3206, agreed 2026-10-09): fabricator's-manual look, one accent colour.
+# steelfig default style (CIVL3206, 2026-10-09 rules; look chosen 2026-11-04): fabricator's-manual line art over a
+# lightly realistic steel render: three-point light with soft shadows, light cool grey steel, one warm accent.
 name = "default"
 
 [colours]            # sRGB hex; Blender gets them linearised, TikZ as rgb
 steel  = "#8f9196"   # main members
 light  = "#c5c7cb"   # secondary members: purlins, girts, diagonals
 dark   = "#75767a"   # bolts, nuts
-accent = "#c9553f"   # ONE subject per figure (muted brick red)
+accent = "#c4603f"
 sheet  = "#d9d5c9"   # roof / wall sheeting
 weld   = "#5e5e60"
 conc   = "#e6e4e0"
 grout  = "#cbcac6"
-line   = "#000000"   # Freestyle outline: keep black (linear 0)
+line = "#1e1f22"
 
 [render]
 resolution = [4200, 2940]   # px before cropping; a 14 cm figure then prints at ~600 dpi
@@ -33,40 +34,48 @@ key_hang_mm = 4.5
 # colour sRGB; metallic / roughness 0..1; noise = roughness variation and fine bump (mill scale); spangle =
 # galvanising crystals (Voronoi) as a colour variation. Add a finish per grade (e.g. [finishes.C450]) and map it in
 # finish_of to change the look of one grade only.
-[finishes.hot_rolled]       # UB, UC, PFC, angles, plates: mill-scale grey with a blue cast, matte-ish
-colour = "#858990"
-metallic = 0.55
+[finishes.hot_rolled]       # UB, UC, PFC, angles, plates: mill-scale grey, light clearcoat and edge lift
+colour = "#9a9ea4"
+metallic = 0.5
 roughness = 0.55
-noise = 0.12
+noise = 0.08
 spangle = 0.0
+coat = 0.12
+edge = 0.25
 
 [finishes.hollow]           # SHS / RHS / CHS: smoother tube surface
-colour = "#8a8d91"
+colour = "#9ea1a5"
 metallic = 0.5
-roughness = 0.45
+roughness = 0.48
 noise = 0.06
 spangle = 0.0
+coat = 0.12
+edge = 0.25
 
 [finishes.galvanised]       # Z / C purlins and girts, sheeting: light, spangled
-colour = "#b7babd"
-metallic = 0.8
-roughness = 0.38
+colour = "#c6c9cc"
+metallic = 0.7
+roughness = 0.42
 noise = 0.04
-spangle = 0.08
+spangle = 0.05
+coat = 0.05
+edge = 0.35
 
 [finishes.bolt]             # structural bolts, HDG: dark grey
-colour = "#4a4c50"
+colour = "#55575b"
 metallic = 0.6
 roughness = 0.5
 noise = 0.05
 spangle = 0.0
 
 [finishes.accent]           # the figure's subject: painted steel in the accent colour
-colour = "#c9553f"
-metallic = 0.25
+colour = "#c4603f"
+metallic = 0.2
 roughness = 0.5
 noise = 0.06
 spangle = 0.0
+coat = 0.12
+edge = 0.25
 
 [finish_of]                 # catalogue type (or grade) -> finish; palette names map too
 UB = "hot_rolled"
@@ -88,13 +97,21 @@ dark = "bolt"
 accent = "accent"
 sheet = "galvanised"
 
+[lighting]                  # three suns: key (casts soft shadows), fill (no shadow), rim (edge separation); energies
+key = 2.4
+key_elev = 50               # degrees above the horizon
+key_azim = 35               # degrees, 0 = from the south (-y), positive towards the east
+key_soft = 6                # sun angle in degrees: shadow softness
+fill = 0.9
+rim = 0.7
+
 [world]                     # soft gradient environment so metal has something to reflect; film stays transparent
 sky = "#ffffff"
-ground = "#b9bcc0"
-strength = 0.95
+ground = "#d2d4d8"
+strength = 1.0
 
 [lines]                     # outline hierarchy (multiples of render.line_width)
 contour = 1.25              # outer silhouette / contour of each part
-crease = 0.6                # internal fold lines (flange-web junctions)
-secondary = 0.65            # parts in the "secondary" collection: purlins, girts, sheeting, cleats
-fade = 0.7                  # thickness multiplier at the far end of the scene (1 = no depth fade)
+crease = 0.5
+secondary = 0.6
+fade = 0.75

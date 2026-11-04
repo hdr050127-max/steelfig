@@ -26,7 +26,9 @@ A point may also be `[x, y, z]` or `[x, z]` (y = 0).
 
 ```toml
 title = "…"                       # free text
-style = "default"                 # style sheet (steelfig/styles/<name>.toml or a path); optional
+style = "default"                 # style sheet (steelfig/styles/<name>.toml, resources/styles/, or a path); optional
+                                  # default = three-point light with soft shadows, light cool-grey coated steel, one warm
+                                  # accent (chosen 2026-11-04); "light" = pale textbook look; finishes have coat / edge keys
                                   # members get a steel finish from their catalogue type ([finishes] / [finish_of] in the
                                   # style: hot_rolled, hollow, galvanised, bolt, accent) unless `material` is given
 frames = [0.0, 11.315, 22.63]     # y positions; members with per_frame = true are repeated at each

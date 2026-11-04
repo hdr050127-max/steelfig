@@ -197,7 +197,7 @@ for v in sc.get("view", []):
         a = v.get("auto", {}) if isinstance(v.get("auto"), dict) else {}
         focus = [o for o in B.all_meshes() if any(o.name == f or o.name.startswith(f + "_") for f in a.get("focus", []))] or None
         fit = [o for o in B.all_meshes() if any(o.name == f or o.name.startswith(f + "_") for f in a.get("fit", []))] or None
-        cam_list = B.auto_camera(focus, fit, a.get("dir", [0.6, -1.0, 0.45]), a.get("lens", 40), a.get("fill", 0.8), quick=quick, line=v.get("line"))
+        cam_list = B.auto_camera(focus, fit, a.get("dir", [0.65, -1.0, 0.36]), a.get("lens", 45), a.get("fill", 0.8), quick=quick, line=v.get("line"))
         print("camera %s = [%s]   (auto; paste into the scene to fix it)" % (v["name"], ", ".join("%g" % x for x in cam_list)))
     elif "camera" in v:
         c = v["camera"]; cam = B.setup(cam_loc=c[0:3], target=c[3:6], lens=c[6], res=v.get("res"), line=v.get("line"), quick=quick, cam=opt.get("cam")); cam_list = list(c)

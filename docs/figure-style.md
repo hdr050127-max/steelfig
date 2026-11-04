@@ -16,6 +16,14 @@ figures have to look like a fabricator's manual or a steel textbook, and every p
   members (purlins, girts, diagonals) in `light`, bolts in `dark`.
 - Cut-away: show one bay, one end, part of the sheeting; cut members at a clean plane so the section shows.
 
+## The render (style sheet `default.toml`, 2026-11-04)
+- Lighting: a key sun (50° up, 35° east of south, 6° soft) that casts the only shadows, a fill without shadow, a
+  rim from behind; a white-to-grey gradient sky so metal has something to reflect. Shadows exist but are soft:
+  depth without drama. Render time stays a few seconds per view (EEVEE).
+- Steel: light cool grey with roughness noise (mill scale), a light clearcoat and an edge lift; galvanised parts
+  lighter with a faint spangle; bolts dark. One warm accent (#c4603f) on the subject only.
+- Lines: dark grey (not black) outlines, contour heavier than creases, secondary parts thinner, mild depth fade.
+
 ## How to label
 - Parts are named only with numbered balloons beside the part, an arrow leader back to the part, and the text in a
   key below or beside the figure. Never write words on top of the picture (rejected 2026-10-09 as messy).

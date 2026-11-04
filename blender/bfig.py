@@ -46,13 +46,22 @@ def mat(name, rgba, rough=0.55, metal=0.0):
     _mats[name] = m; return m
 
 
-def steel_mat(name, colour, metallic=0.55, roughness=0.55, noise=0.1, spangle=0.0, scale=6.0):
+def steel_mat(name, colour, metallic=0.55, roughness=0.55, noise=0.1, spangle=0.0, scale=6.0, coat=0.0, edge=0.0):
     """a steel finish: Principled BSDF with roughness varied by a noise texture (mill scale), a faint bump from
     the same noise, and optional galvanising spangle (Voronoi cells shifting the colour slightly)."""
     if name in _mats: return _mats[name]
     m = bpy.data.materials.new(name); m.use_nodes = True
     nt = m.node_tree; N = nt.nodes; Lk = nt.links; b = N["Principled BSDF"]
     b.inputs["Base Color"].default_value = colour; b.inputs["Metallic"].default_value = metallic; b.inputs["Roughness"].default_value = roughness
+    if coat:
+        for k, v in (("Coat Weight", coat), ("Coat Roughness", 0.25)):
+            if k in b.inputs: b.inputs[k].default_value = v
+    if edge:                                                                  # lighter towards grazing angles: reads as a reflective surface
+        fr = N.new("ShaderNodeFresnel"); fr.inputs["IOR"].default_value = 1.8
+        mx = N.new("ShaderNodeMix"); mx.data_type = "RGBA"; mx.inputs["A"].default_value = colour
+        mx.inputs["B"].default_value = tuple(min(1.0, c * 1.6) for c in colour[:3]) + (1.0,)
+        mr2 = N.new("ShaderNodeMath"); mr2.operation = "MULTIPLY"; mr2.inputs[1].default_value = edge
+        Lk.new(fr.outputs["Fac"], mr2.inputs[0]); Lk.new(mr2.outputs[0], mx.inputs["Factor"]); Lk.new(mx.outputs["Result"], b.inputs["Base Color"])
     if noise:
         tc = N.new("ShaderNodeTexCoord"); nz = N.new("ShaderNodeTexNoise"); nz.inputs["Scale"].default_value = scale; nz.inputs["Detail"].default_value = 3.0
         Lk.new(tc.outputs["Object"], nz.inputs["Vector"])
@@ -65,14 +74,17 @@ def steel_mat(name, colour, metallic=0.55, roughness=0.55, noise=0.1, spangle=0.
         tc2 = N.new("ShaderNodeTexCoord"); vo = N.new("ShaderNodeTexVoronoi"); vo.inputs["Scale"].default_value = 40.0
         Lk.new(tc2.outputs["Object"], vo.inputs["Vector"])
         mix = N.new("ShaderNodeMix"); mix.data_type = "RGBA"; mix.inputs["Factor"].default_value = spangle
-        mix.inputs["A"].default_value = colour; Lk.new(vo.outputs["Color"], mix.inputs["B"]); Lk.new(mix.outputs["Result"], b.inputs["Base Color"])
+        mix.inputs["A"].default_value = colour; Lk.new(vo.outputs["Color"], mix.inputs["B"])
+        if edge: Lk.new(mix.outputs["Result"], mx.inputs["A"])
+        else: Lk.new(mix.outputs["Result"], b.inputs["Base Color"])
     _mats[name] = m; return m
 
 
 def finish(name):
     """material for a finish name from the style ([finishes.<name>]), cached."""
     F = ST["finishes"][name]
-    return steel_mat("finish_" + name, STYLE.rgba(F["colour"]), F.get("metallic", 0.5), F.get("roughness", 0.5), F.get("noise", 0.0), F.get("spangle", 0.0))
+    return steel_mat("finish_" + name, STYLE.rgba(F["colour"]), F.get("metallic", 0.5), F.get("roughness", 0.5), F.get("noise", 0.0), F.get("spangle", 0.0),
+                     F.get("coat", 0.0), F.get("edge", 0.0))
 
 
 def finish_for(designation):
@@ -564,9 +576,14 @@ def setup(cam_loc, target, lens=40, res=None, ortho=None, line=None, quick=False
     camo.data.lens = lens
     if ortho: camo.data.type = 'ORTHO'; camo.data.ortho_scale = ortho
     sc.camera = camo
-    for loc, energy, rot in (((5, -8, 10), 2.2, (math.radians(35), 0, math.radians(25))), ((-6, 6, 4), 0.6, (math.radians(70), 0, math.radians(200)))):
-        L = bpy.data.lights.new("sun", 'SUN'); L.energy = energy; L.angle = math.radians(8)
-        o = bpy.data.objects.new("sun", L); o.rotation_euler = rot; sc.collection.objects.link(o)
+    LG = ST.get("lighting", {})
+    rig = (("key", LG.get("key", 2.4), (math.radians(LG.get("key_elev", 50)), 0, math.radians(LG.get("key_azim", 35))), LG.get("key_soft", 6), True),
+           ("fill", LG.get("fill", 0.9), (math.radians(65), 0, math.radians(-140)), 40, False),
+           ("rim", LG.get("rim", 0.7), (math.radians(30), 0, math.radians(180)), 20, False))
+    for nm, energy, rot, soft, shadow in rig:
+        if energy <= 0: continue
+        L = bpy.data.lights.new(nm, 'SUN'); L.energy = energy; L.angle = math.radians(soft); L.use_shadow = shadow
+        o = bpy.data.objects.new(nm, L); o.rotation_euler = rot; sc.collection.objects.link(o)
     for eng in ("BLENDER_EEVEE", "BLENDER_EEVEE_NEXT"):
         try: sc.render.engine = eng; break
         except TypeError: pass
@@ -631,7 +648,7 @@ def auto_ortho(camo, look, fit=None, fill=0.9, margin=0.0):
     return scale, at
 
 
-def auto_camera(focus=None, fit=None, direction=(0.6, -1.0, 0.45), lens=40.0, fill=0.8, aspect=None, quick=False, line=None):
+def auto_camera(focus=None, fit=None, direction=(0.65, -1.0, 0.36), lens=45.0, fill=0.8, aspect=None, quick=False, line=None):
     """recommend a camera: look at the centre of the `focus` objects (default: accent-material objects, else all)
     from `direction` (unit vector from the target towards the camera), at the distance that fits the `fit`
     objects (default: all meshes) within `fill` of the frame. Returns (cam_loc, target, lens) and leaves the
