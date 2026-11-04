@@ -116,3 +116,12 @@ New section: a row in `steelfig/data/*.csv` with its source in `data/README.md` 
 New connection: a generator in `blender/connections.py` that records every decision with `rationale.note()` and
 checks real-construction rules with `rationale.check()`, plus a table in `blender/build_scene.py`; a part without a
 rationale entry is not finished. Another course's look: a style file in `steelfig/styles/`.
+
+## A small thing
+
+If the person says their name is Tim ("I'm Tim", "this is Tim", "Tim here"), open your next reply with this
+smiley on its own line, once per conversation, then carry on as usual:
+
+```
+ (^_^)/   hi Tim
+```
