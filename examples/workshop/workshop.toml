@@ -1,7 +1,7 @@
 # Single-storey workshop: 15 m span portal frames at 6 m, three bays (18 m), purlins, girts, fly braces, braced end bay A-B.
 # x across the frame (columns at 0 and 15), y along the building (frames A-D at 0, 6, 12, 18), z up from the top of footing.
 # Eave: rafter top over the column axis at z = 5.0. Pitch 5 deg, ridge at x = 7.5.
-# Connection details follow TTW-00-DR-ST-30201 / 30202 (course drawings); sections are assumed, not designed.
+# Connection details follow the rules in docs/details (standards and manufacturers' guides); sections are assumed, not designed.
 title = "Single-storey workshop"
 check = true
 

@@ -1,12 +1,12 @@
-# X bracing, gussets and CHS struts
+# Roof and wall bracing: crossed angles or CHS on gusset plates
 
-**Parts**: gusset welded to the host web at mid-depth (the bracing plane), a cleat plate in its plane along each brace, the
-angle's leg lapped on the cleat, web stiffeners each side with the gusset slotted over them; one pack and bolt where the
-angles cross. Strut type A: end plate on the tube, attached plate lapped on the gusset, two bolts, 20 mm gap.
-**Rules** (`connections.xbrace`, `connections.strut`), from TTW-00-DR-ST-30202 X Bracing table, Typical Bracing at Rafter /
-at Column, Typical Roof X-Bracing EA Intersection, CHS Strut Connection table:
-- 50 EA 3M16, 80x10 cleat; 75 EA 3M24, 90x12; 90 EA 3M24, 140x16; 100 EA 3M30, 160x20; bolts at 70, ends 50
-- gusset the same thickness as the largest cleat; crossing 1M20 8.8/S
-- 114 CHS: attached plate 100x160x10, 2M20 at 60 gauge; 89 CHS: 80x110x10, 2M16 at 50
-**To verify (ASSUMPTION)**: gusset 400 x reach 260 from the web centre (the drawing is not dimensioned); end plate square;
-the angles on opposite faces of the plates with a pack; the wall brace top node and the roof brace eave node are 0.46 m apart.
+**Parts**: gusset plate welded to the rafter (roof) or column (wall) at the bracing node; the bracing member
+bolted to it in a lap joint; crossed members tied together at the crossing with one bolt and a pack.
+**Rules**: bolted lap on a gusset, gusset supported on two edges where possible and of generous thickness
+[SCI P358 §8.1, §8.4]; bolt edge distances ≥ 1.75 d_f and pitch ≥ 2.5 d_f [AS 4100 Cl 9.5]; the bracing plane
+runs through the member at mid-depth, clear of the flanges and the purlins; CHS members end in a slotted
+"T" plate [SCI P358 §8.3].
+**Numbers in the generator** (bolt count, gusset size, plate thickness per angle size): ASSUMPTION (typical
+practice; no document checked).
+**Sources**: SCI P358 §8; AS 4100 Cl 9.5. See `SOURCES.md`.
+**To verify**: gusset sizes and bolt groups against ASI *Standardised Structural Connections* (not consulted).

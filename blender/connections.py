@@ -4,7 +4,7 @@ stiffeners land where the real detail puts them and nothing has to be placed by 
 The scene builder applies the cuts when it creates the members (the rafter stops at the end-plate face, the
 column stops under the roof, the column base starts above the base plate) and calls build() afterwards; build()
 adds the parts and fills `anchors` (points for the overlay: plate, bolt, stiffener, …).
-Proportions follow common Australian practice (TTW / ASI standard connections): end plates 20 mm, bolts 45 mm
+Proportions follow SCI P398 / P358 and common Australian practice: end plates 20 mm, bolts 45 mm
 either side of the web, rows 55–60 mm from each flange, stiffeners 12–16 mm, base plate 20 mm on 40 mm grout.
 Units metres. `line` is an assembly.Line (the rafter TOP line); members are referenced by scene name."""
 import math
@@ -18,7 +18,7 @@ X = Vector((1, 0, 0)); Y = Vector((0, 1, 0)); Z = Vector((0, 0, 1))
 
 def defaults(depth):
     """connection proportions by the depth (m) of the connected beam / column, following common Australian
-    practice (ASI / TTW standard connections): bolt size, end-plate thickness, bolt gauge from the web,
+    practice (SCI P398 standardisation, ASI): bolt size, end-plate thickness, bolt gauge from the web,
     row distance from the flange, stiffener and base-plate thickness, holding-down bolt."""
     if depth < 0.32:   return dict(bolt="M16", ep_t=0.016, bolt_in=0.040, row_off=0.045, stiff_t=0.010, cap_t=0.016, plate_t=0.020, hd_bolt="M20")
     if depth < 0.47:   return dict(bolt="M20", ep_t=0.020, bolt_in=0.045, row_off=0.055, stiff_t=0.012, cap_t=0.020, plate_t=0.025, hd_bolt="M24")
@@ -63,7 +63,7 @@ def knee(name, line, x_col, col, col_sec, raf, raf_sec, M, side=1, ep_t=None, ep
     RA.note(name, "end plate %.0f mm thick, %s bolts, gauge %.0f mm about the web, rows %.0f mm from each rafter flange, stiffeners %.0f mm" % (
         ep_t * 1000, bolt, 2 * bolt_in * 1000, row_off * 1000, stiff_t * 1000), "sized by the rafter depth %.0f mm (connections.defaults)" % (dR * 1000), "asi_ep")
     RA.note(name, "rafter ends on the plate face %.0f mm off the column flange; plate and column top %.0f mm past the rafter top" % (ep_t * 1000, ep_ext * 1000),
-           "the plate bears on the column flange; the bolt row above the rafter needs column flange behind it and an edge distance to the plate end", "ttw1")
+           "the plate bears on the column flange; the bolt row above the rafter needs column flange behind it and an edge distance to the plate end", "sci_p398")
     RA.note(name, "column stiffeners in line with both rafter flanges", "flange forces of a moment connection go into the column web as concentrated loads", "asi_ep")
     RA.check(ep_ext - row_off >= 1.5 * df - 1e-9, name, "bolt row %.0f mm from the plate end" % ((ep_ext - row_off) * 1000), "edge")
     RA.check(2 * bolt_in >= 2.5 * df, name, "bolt gauge %.0f mm: minimum pitch 2.5 d_f" % (2 * bolt_in * 1000), "pitch")
@@ -105,7 +105,7 @@ def splice(name, line, x, a, a_sec, b, b_sec, M, ep_t=None, ep_ext=None, bolt=No
     cuts = {a: {"cut1": (line.at(x - ep_t), X)}, b: {b_end: (line.at(x + ep_t), X)}}
     anchors = {}
     RA.note(name, "two end plates %.0f mm back to back at x = %.3f m, %s bolts above and below each flange of the shallower section" % (ep_t * 1000, x, bolt),
-           "plates span the deeper section; the bolts work on the shallower flanges", "ttw1")
+           "plates span the deeper section; the bolts work on the shallower flanges", "sci_p398")
     RA.check(ep_ext - row_off >= 1.5 * df - 1e-9, name, "bolt row %.0f mm from the plate end" % ((ep_ext - row_off) * 1000), "edge")
 
     def build():
@@ -134,7 +134,7 @@ def cap(name, line, x, col, col_sec, raf_sec, M, cap_t=None, bolt=None, stiff_t=
     cuts = {col: {"cut1": (under - n * cap_t, n)}}                              # column top cut parallel to the roof
     anchors = {}
     RA.note(name, "cap plate %.0f mm on the roof slope, column cut parallel to the roof, %s bolts 45 mm outside the column walls, web stiffeners over the walls" % (cap_t * 1000, bolt),
-           "a flat plate under a sloping rafter would leave a wedge; bolts cannot be inside a tube; the rafter web must carry the wall reactions", "ttw")
+           "a flat plate under a sloping rafter would leave a wedge; bolts cannot be inside a tube; the rafter web must carry the wall reactions", "sci_p398")
 
     def build():
         B.plate(name + "_cap", under - n * cap_t / 2, tt, Y, (cw + 0.16, max(bfR, C["b"]) + 0.04, cap_t), M["steel"])
@@ -163,7 +163,7 @@ def base(name, x, col, col_sec, M, z0=0.0, plate_t=None, grout=0.040, bolt=None,
     cuts = {col: {"cut0": (Vector((x, y, z0 + grout + plate_t)), Z)}}
     anchors = {}
     RA.note(name, "base plate %.0f mm on %.0f mm grout, four %s holding-down bolts %s" % (plate_t * 1000, grout * 1000, bolt, "45 mm outside the tube walls" if tube else "%.0f mm inside the flange faces" % (bolts_in * 1000)),
-           "pinned base: bolts close to the column axis give little moment capacity; a bolt cannot be inside a tube; grout takes the levelling tolerance", "ttw_base")
+           "pinned base: bolts close to the column axis give little moment capacity; a bolt cannot be inside a tube; grout takes the levelling tolerance", "sci_p358_base")
     RA.check(px / 2 - bx >= 1.5 * df, name, "holding-down bolt %.0f mm from the base plate end" % ((px / 2 - bx) * 1000), "edge")
 
     def build():
@@ -227,18 +227,20 @@ def purlin_cleats(name, purlin_pts, purlin_section, line, M, t=0.008, h=None, bo
     """plate cleat welded to the top flange under each purlin at each frame y, the purlin web bolted to it (two bolts),
     on the face of the web that has no flange in the way (upslope for a Z, the back for a C). flip: the purlins are
     flipped, as on the slope where the line's tangent runs downhill."""
-    P = _sec(purlin_section); d = P["d"]; dn = round(d, 2); h = h or dn - 0.005; out = []; df = SEC_DB.bolt(bolt)["d"]   # Stramit cleat table: Y
-    fs = 1 if P["row"]["type"] == "Z" else -1; lo = 0.055 if dn <= 0.25 else 0.065; hi = lo + dn - 0.09   # holes at B and B + X
-    RA.note(name, "cleat 75 x %.0f mm plate, %.0f high, 2 %s 4.6/S through the purlin web, on the flange-free face" % (t * 1000, h * 1000, bolt),
-           "the purlin web is the part that bolts; the cleat keeps it upright and carries the load into the rafter top flange; bolts as far apart as the web allows", "ttw2")
-    RA.note(name, "height %.0f, holes %.0f and %.0f above the base" % (h * 1000, lo * 1000, hi * 1000), "TTW gives width, thickness and bolt; the height and hole positions are the Stramit cleat table (which itself gives 60 wide and M16)", "stramit")
+    P = _sec(purlin_section); d = P["d"]; dn = round(d, 2); h = h or dn - 0.005; out = []
+    w = 0.050 if dn <= 0.102 else 0.060; t = 0.012 if dn >= 0.30 else t; bolt = ("M20" if dn >= 0.30 else "M16") if bolt == "M12" else bolt   # Stramit cleat table: W, t, hole
+    df = SEC_DB.bolt(bolt)["d"]
+    fs = 1 if P["row"]["type"] == "Z" else -1; lo = 0.040 if dn <= 0.102 else (0.055 if dn <= 0.25 else 0.065); hi = lo + dn - 0.09   # holes at B and B + X
+    RA.note(name, "cleat %.0f x %.0f mm plate, %.0f high, 2 %s through the purlin web, on the flange-free face" % (w * 1000, t * 1000, h * 1000, bolt),
+           "the purlin web is the part that bolts; the cleat keeps it upright and carries the load into the rafter top flange; width, thickness, bolt and hole positions from the manufacturer's cleat table", "stramit")
+    RA.note(name, "height %.0f, holes %.0f and %.0f above the base" % (h * 1000, lo * 1000, hi * 1000), "Stramit gives width, thickness and bolt; the height and hole positions are the Stramit cleat table (which itself gives 60 wide and M16)", "stramit")
     RA.check(h - hi >= 1.5 * df - 1e-9, name, "cleat bolt %.0f mm from the cleat end" % ((h - hi) * 1000), "edge")
     RA.check(hi - lo >= 2.5 * df, name, "cleat bolt pitch %.0f mm" % ((hi - lo) * 1000), "pitch")
     for fy in frames:
         for k, p in enumerate(purlin_pts):
             q = Vector(p) + Y * fy; n = line.normal(p.x); tt = line.tangent(p.x) * (-1 if flip else 1)
             c = q + tt * fs * (P["t"] / 2 + t / 2 + 0.001) + n * h / 2
-            out.append(B.plate("%s%d_%g" % (name, k, fy), c, Y, n, (0.075, h, t), M["steel"]))
+            out.append(B.plate("%s%d_%g" % (name, k, fy), c, Y, n, (w, h, t), M["steel"]))
             for dz in (lo, hi):
                 B.cyl("%s%d_%g_b%.2f" % (name, k, fy, dz), q + n * dz, tt, df / 2, t + P["t"] + 0.02, M["dark"], segments=12)["clash_ok"] = 1
     return out
@@ -247,23 +249,25 @@ def purlin_cleats(name, purlin_pts, purlin_section, line, M, t=0.008, h=None, bo
 def girt_cleats(name, x, levels, frames, girt_section, outward, M, t=0.008, h=None, bolt="M12"):
     """plate cleat welded to the column outer flange under the web of each Z or C girt at each frame y, two bolts
     through the web. A girt web is horizontal, so the cleat is too; it sits on the face without the inner flange."""
-    P = _sec(girt_section); d = P["d"]; h = h or 0.6 * d; df = SEC_DB.bolt(bolt)["d"]; out = []
+    P = _sec(girt_section); d = P["d"]; dn = round(d, 2); h = h or dn - 0.005; out = []
+    w = 0.050 if dn <= 0.102 else 0.060; t = 0.012 if dn >= 0.30 else t; bolt = ("M20" if dn >= 0.30 else "M16") if bolt == "M12" else bolt
+    df = SEC_DB.bolt(bolt)["d"]
     o = Vector(outward).normalized(); v = Y.cross(o); fs = 1 if P["row"]["type"] == "Z" else -1
-    RA.note(name, "cleat 75 x %.0f mm plate welded to the column flange, %.0f long, 2 %s 4.6/S through the girt web" % (t * 1000, h * 1000, bolt),
-           "same arrangement as a purlin cleat turned onto the wall; the girt web is horizontal, the bolts vertical", "ttw1")
+    RA.note(name, "cleat %.0f x %.0f mm plate welded to the column flange, %.0f long, 2 %s through the girt web" % (w * 1000, t * 1000, h * 1000, bolt),
+           "same arrangement as a purlin cleat turned onto the wall; the girt web is horizontal, the bolts vertical", "stramit")
     RA.check(0.3 * h >= 1.5 * df, name, "cleat bolt %.0f mm from the cleat end" % (0.3 * h * 1000), "edge")
     RA.check(0.4 * h >= 2.5 * df, name, "cleat bolt pitch %.0f mm" % (0.4 * h * 1000), "pitch")
     for fy in frames:
         for k, z in enumerate(levels):
             q = Vector((x, fy, z))
-            out.append(B.plate("%s%d_%g" % (name, k, fy), q + o * h / 2 + v * fs * (P["t"] / 2 + t / 2 + 0.001), o, Y, (h, 0.075, t), M["steel"]))
+            out.append(B.plate("%s%d_%g" % (name, k, fy), q + o * h / 2 + v * fs * (P["t"] / 2 + t / 2 + 0.001), o, Y, (h, w, t), M["steel"]))
             for dz in (0.3 * h, 0.7 * h):
                 B.cyl("%s%d_%g_b%.2f" % (name, k, fy, dz), q + o * dz, v, df / 2, t + P["t"] + 0.02, M["dark"], segments=12)["clash_ok"] = 1
     return out
 
 
 # ---------------------------------------------------------------- xbrace: an X of angles between two frames
-XBRACE = {50: (3, "M16", 0.080, 0.010), 75: (3, "M24", 0.090, 0.012), 90: (3, "M24", 0.140, 0.016), 100: (3, "M30", 0.160, 0.020)}   # TTW X bracing table: bolts, cleat plate
+XBRACE = {50: (3, "M16", 0.080, 0.010), 75: (3, "M24", 0.090, 0.012), 90: (3, "M24", 0.140, 0.016), 100: (3, "M30", 0.160, 0.020)}   # typical X bracing table: bolts, cleat plate
 GUSSET_A, GUSSET_W = 0.20, 0.26                                                  # half length along the host, reach out from the web centre
 
 
@@ -277,11 +281,11 @@ def xbrace(name, a0, a1, b0, b1, normal, host_sec, section, M, stiff_t=0.010):
     nb, bolt, wp, tp = XBRACE[round(leg * 1000)]; df = SEC_DB.bolt(bolt)["d"]; tw = H["tw"]; end, pitch = 0.050, 0.070; Lp = 2 * end + (nb - 1) * pitch
     an = {"a0": Vector(a0), "a1": Vector(a1), "b0": Vector(b0), "b1": Vector(b1)}; anchors = {}
     RA.note(name, "%s X: cleat %.0f x %.0f x %.0f mm, %d %s 8.8/S at %.0f pitch, %.0f end distances; gusset the same thickness" % (section, Lp * 1000, wp * 1000, tp * 1000, nb, bolt, pitch * 1000, end * 1000),
-           "bolt group and plate from the X bracing table for this angle size; the gusset matches the largest cleat", "ttw2")
+           "bolt group and plate from the X bracing table for this angle size; the gusset matches the largest cleat", "assume")
     RA.note(name, "gusset %.0f x %.0f x %.0f mm welded to the web at mid-depth; %.0f mm web stiffeners each side, gusset slotted over them" % (2 * GUSSET_A * 1000, (GUSSET_W - tw / 2) * 1000, tp * 1000, stiff_t * 1000),
-           "the bracing plane runs through the member at mid-depth, clear of both flanges and of the purlins above; stiffeners keep the thin web from bending under the brace force", "ttw2")
+           "the bracing plane runs through the member at mid-depth, clear of both flanges and of the purlins above; stiffeners keep the thin web from bending under the brace force", "assume")
     RA.note(name, "the angles lie on opposite faces of the plates and cross with a %.0f mm pack and 1 M20 8.8/S" % (tp * 1000),
-           "they pass without cutting; the bolt ties them together so each restrains the other out of plane; the pack fills the gap the plate thickness leaves", "ttw2")
+           "they pass without cutting; the bolt ties them together so each restrains the other out of plane; the pack fills the gap the plate thickness leaves", "assume")
     RA.check(pitch >= 2.5 * df, name, "brace bolt pitch %.0f mm" % (pitch * 1000), "pitch")
     RA.check(end >= 1.5 * df, name, "brace bolt %.0f mm from the plate or angle end" % (end * 1000), "edge")
     RA.check(leg / 2 >= 1.25 * df, name, "brace bolt %.0f mm from the rolled edge of the leg" % (leg / 2 * 1000), "edge")
@@ -326,7 +330,7 @@ def xbrace(name, a0, a1, b0, b1, normal, host_sec, section, M, stiff_t=0.010):
 
 
 # ---------------------------------------------------------------- strut: CHS between two gussets
-STRUT = {"114.3": (0.100, 0.160, 0.010, 2, "M20", 0.060), "88.9": (0.080, 0.110, 0.010, 2, "M16", 0.050)}   # TTW CHS strut table, type A: attached plate E, F, G, bolts H, I, gauge J
+STRUT = {"114.3": (0.100, 0.160, 0.010, 2, "M20", 0.060), "88.9": (0.080, 0.110, 0.010, 2, "M16", 0.050)}   # typical CHS strut table (ASSUMPTION), type A: attached plate E, F, G, bolts H, I, gauge J
 
 
 def strut(name, a, b, normal, along, section, M, gusset_t=0.012, reach=GUSSET_W):
@@ -337,7 +341,7 @@ def strut(name, a, b, normal, along, section, M, gusset_t=0.012, reach=GUSSET_W)
     E_, F_, G_, nb, bolt, J = STRUT[key]; df = SEC_DB.bolt(bolt)["d"]; gap = 0.020; pa, pb = Vector(a), Vector(b); axis = (pb - pa).normalized(); anchors = {}
     lap = E_ - gap; ae = lap / 2                                                 # bolts mid-way along the lap
     RA.note(name, "%s strut type A: attached plate %.0f x %.0f x %.0f mm, end plate %.0f square, %d %s 8.8/S at %.0f gauge, %.0f mm gap" % (section, E_ * 1000, F_ * 1000, G_ * 1000, F_ * 1000, nb, bolt, J * 1000, gap * 1000),
-           "plate and bolts from the CHS strut table; the strut carries the brace force along the building between the frames", "ttw2")
+           "plate and bolts from the CHS strut table; the strut carries the brace force along the building between the frames", "assume")
     RA.note(name, "end plate taken %.0f mm square" % (F_ * 1000), "the table gives its width only", "assume")
     RA.check(ae >= 1.5 * df, name, "strut bolt %.0f mm from the gusset edge and the plate end" % (ae * 1000), "edge")
     RA.check((F_ - J) / 2 >= 1.5 * df, name, "strut bolt %.0f mm from the attached plate side" % ((F_ - J) / 2 * 1000), "edge")

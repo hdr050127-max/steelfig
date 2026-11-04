@@ -1,5 +1,5 @@
 """Annotation for the K-joint renders: 3D view with balloons + force arrows, elevation with centrelines, e, g / q
-and the 60 deg angle; both joints stacked, one key. python3 make_kjoint.py <render_dir> <report_dir>"""
+and the 45 deg angle; both joints stacked, one key. python3 make_kjoint.py <render_dir> <report_dir>"""
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 from steelfig import overlay as O
@@ -24,13 +24,13 @@ def kel(kind):
     p = pic(f"k{kind}_elev", 6.25)
     d = [("line", ["eL", "eR"], O.CL), ("line", ["axLe"], O.CL), ("line", ["axRe"], O.CL), ("raw", r"\fill (%.3f,%.3f) circle (1.1pt);" % p.pts("I")[0]),
          ("dim", "c0", "I", r"$e$", 1.0 if kind == "gap" else 1.3, "right" if kind == "gap" else "left")]
-    d += ([("dim", "gap0", "gap1", r"$g$", 0.5, "above"), ("angle", "I", "eR", "axRe#1", 0.75, r"60$^\circ$")] if kind == "gap" else [("dim", "ov1", "ov0", r"$q$", 0.75, "above")])
+    d += ([("dim", "gap0", "gap1", r"$g$", 0.5, "above"), ("angle", "I", "eR", "axRe#1", 0.75, r"45$^\circ$")] if kind == "gap" else [("dim", "ov1", "ov0", r"$q$", 0.75, "above")])
     f, _ = O.balloon(p, [], d)
-    note = r"$g = 40$ mm; node $e = 35$ mm below the chord axis" if kind == "gap" else r"overlap $q = 58$ mm ($O_v = 50\%$); node $e = 50$ mm above the chord axis"
+    note = r"$g = 44$ mm; node $e = 10$ mm below the chord axis" if kind == "gap" else r"overlap $q = 63$ mm ($O_v = 50\%$); node $e = 44$ mm above the chord axis"
     return f + r"\\[0.5mm]{\footnotesize " + note + "}"
 
 
-key = [r"\ball{1}\ chord 200" + x + "200" + x + r"9.0 SHS; the cut end shows the true 9.0 mm wall", r"\ball{2}\ diagonals 100" + x + "100" + x + r"4.0 SHS at 60$^\circ$",
+key = [r"\ball{1}\ chord 150" + x + "150" + x + r"6.0 SHS; the cut end shows the true 6.0 mm wall", r"\ball{2}\ diagonals 89" + x + "89" + x + r"3.5 SHS at 45$^\circ$",
        r"\ball{3}\ fillet weld all round", r"\ball{4}\ gap $g$ between the diagonal toes", r"\ball{5}\ through member (welded to the chord only)",
        r"\ball{6}\ overlapping member: cut to sit partly on \ball{5}", O.dash(O.CL) + r"\ member centrelines; $e$ = distance of the node below (+) or above ($-$) the chord axis"]
 body = (O.row([k3d("gap"), kel("gap")]) + r"\\[1mm]{\small (a) K-gap joint}\\[4mm]" + O.row([k3d("overlap"), kel("overlap")]) + r"\\[1mm]{\small (b) K-overlap joint}\\[3mm]"

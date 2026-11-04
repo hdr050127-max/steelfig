@@ -1,6 +1,6 @@
 """Extract section dimension tables from the OneSteel / Liberty / Austube property workbooks into steelfig/data/*.csv.
 Usage: python3 tools/extract_sections.py <open_sections.xlsx> <hollow_sections.xlsx>
-(the Canvas copies: 'liberty-steel-hot-rolled-open-sections-properties.xlsx', 'properties-onesteel-hollow-sections.xlsx')"""
+(the mills' property workbooks, e.g. 'liberty-steel-hot-rolled-open-sections-properties.xlsx', 'properties-onesteel-hollow-sections.xlsx')"""
 import sys, csv, os, re, openpyxl
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "steelfig", "data")

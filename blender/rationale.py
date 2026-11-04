@@ -10,16 +10,18 @@ _fails = []
 SRC = {
     "edge": "AS 4100:2020 Table 9.5.2: minimum edge distance 1.75 d_f sheared or hand flame-cut, 1.50 d_f rolled plate, flat bar or section with a machine-cut, sawn or planed edge, 1.25 d_f rolled edge",
     "pitch": "AS 4100:2020 Cl 9.5.1: minimum bolt pitch 2.5 d_f",
-    "hole": "AS 4100:2020 Cl 14.3.2: standard hole 2 mm larger than the bolt up to M24, 3 mm above",
-    "purlin": "Stramit / Lysaght purlin manuals: Z purlin lies with bottom flange downslope, top flange upslope; fly brace to the purlin web (docs/details/fly_brace.md; ASSUMPTION for the exact bolt height: mid-web)",
-    "flybrace": "common Australian portal-frame practice (purlin manuals, draftsperson.net typical fly brace detail): angle from the rafter bottom flange to the purlin web, both sides, at 30-60 degrees (docs/details/fly_brace.md)",
-    "ttw": "TTW course standard details ST-30xxx: extended end plate knee, bolted end-plate splice, cap plate on SHS, pinned base plate (docs/details/knee.md, splice.md, cap.md, base.md)",
-    "asi_ep": "ASI Standardised Structural Connections (bolted moment end plate): bolt gauge about the web, rows above and below each flange, plate 20-32 mm (docs/details/knee.md)",
-    "ttw1": "TTW-00-DR-ST-30201 Typical Steelwork Details Sheet 1 (course drawings; details indicative): end rafter to column 20 end plate, 4M20 8.8/S at 90 gauge, rows 55 from the flange; WB/UB splice type 3, 90 gauge; girt web on a cleat at the column flange",
-    "ttw2": "TTW-00-DR-ST-30202 Typical Steelwork Details Sheet 2 (course drawings; details indicative): X-bracing table, bracing at rafter and at column, EA intersection 1M20 8.8/S, CHS strut table, purlin cleat table, fly brace at 45 deg and angle table",
-    "ttw_base": "TTW course drawings p22: portal frame base plate table, 40 grout pad, bolts 60 inside the flange faces; SHS column base with bolts outside the walls",
-    "stramit": "Stramit Purlins, Girts & Bridging Detailing & Installation Guide (docs/details/sources/stramit-guide.md): cleat nominal dimensions; fly bracing through the lower web hole",
-    "assume": "ASSUMPTION (common practice, no document checked; see the To verify list in docs/details/)",
+    "hole": "AS 4100:2020 Cl 14.3.5.2: standard hole 2 mm larger than the bolt up to M24, 3 mm above",
+    "weld": "AS 4100:2020 Table 9.6.3.2: minimum fillet weld size by the thicker part joined; SCI P358 7.2: 6 or 8 mm fillets on base plates",
+    "stiff": "AS 4100:2020 Cl 5.14 load-bearing stiffeners at concentrated loads; SCI P398 2.4 column stiffening in line with the beam flanges",
+    "sci_p398": "SCI P398 Moment-Resisting Joints (2013) 1.2: M20 / M24 class 8.8, gauge 90 or 100, pitch 90, S275 / S355 fittings; Fig 2.5 end-plate geometry; 4.4 bolted end-plate splices (docs/details/knee.md, splice.md)",
+    "sci_p358": "SCI P358 Simple Joints (2014) 2: standard layouts gauge 90 / 140, pitch 70, end distance 40, edge distance 30, M20 in 22 holes (docs/details/cap.md)",
+    "sci_p358_base": "SCI P358 7 column bases: plate 100 mm larger all round than the column, thickness >= flange, HD bolts 8.8 M20-M24 (M36 over 50 mm plates), holes d + 6, bedding 25-50 (P398 5.4: 20-40), fillets 6 or 8 (docs/details/base.md)",
+    "sci_p358_brace": "SCI P358 8 bracing connections: bolted lap on a gusset welded to the main member, gusset supported on two edges, generous thickness; CHS ends in a slotted T plate (docs/details/xbrace.md)",
+    "purlin": "Stramit purlin manuals: Z purlin lies with the narrow flange up, wide flange down; fly brace to the purlin web through the lower web hole (docs/details/fly_brace.md)",
+    "flybrace": "common Australian portal-frame practice (purlin manuals, published typical fly brace details): angle from the rafter bottom flange to the purlin web, both sides, at about 45 degrees (docs/details/fly_brace.md)",
+    "asi_ep": "ASI Standardised Structural Connections (bolted moment end plate): bolt gauge about the web, rows above and below each flange (not consulted directly; docs/details/knee.md)",
+    "stramit": "Stramit Purlins, Girts & Bridging Detailing & Installation Guide (resources/catalogues/stramit-purlins-girts-guide-excerpt.md): cleat nominal dimensions; fly bracing through the lower web hole; no welding to purlins",
+    "assume": "ASSUMPTION (typical practice, no document checked; see the To verify list in docs/details/)",
 }
 
 

@@ -1,7 +1,7 @@
-"""K-gap and K-overlap joints of an SHS Warren truss at true size (the Python-API route, ported from the D2 report).
-Chord 200x200x9.0 SHS, diagonals 100x100x4.0 SHS at 60 deg, fillet welds all round; diagonals trimmed to the chord
-face with boolean cuts, the overlapping diagonal cut by the through one. Gap joint g = 40 mm (node e = +35 mm below
-the chord axis); overlap O_v = 50 % (e = -50 mm). Each joint gets a 3D view and an orthographic elevation.
+"""K-gap and K-overlap joints of an SHS Warren truss at true size (the Python-API route).
+Chord 150x150x6.0 SHS, diagonals 89x89x3.5 SHS at 45 deg, fillet welds all round; diagonals trimmed to the chord
+face with boolean cuts, the overlapping diagonal cut by the through one. Gap joint g = 44 mm (node e = +10 mm below
+the chord axis); overlap O_v = 50 % (q = 63 mm, e = -44 mm). Sizes are an illustration, not a design. Each joint gets a 3D view and an orthographic elevation.
 Run: steelfig render examples/kjoint/fig_kjoint.py <out_dir> [quick]; then python3 make_kjoint.py <out_dir> <report_dir>"""
 import sys, math, os
 
@@ -9,8 +9,8 @@ import bfig as B
 from mathutils import Vector
 
 out, quick, opt = B.args()
-h0, t0, b1, t1 = 0.200, 0.009, 0.100, 0.004
-th = math.radians(60); W = 0.008                       # weld leg (drawn slightly large so it reads at print size)
+h0, t0, b1, t1 = 0.150, 0.006, 0.089, 0.0035
+th = math.radians(45); W = 0.008                       # weld leg (drawn slightly large so it reads at print size)
 Lc, Ld = 0.62, 0.62                                    # half chord length shown, diagonal length above the chord face
 dL, dR = Vector((-math.cos(th), 0, math.sin(th))), Vector((math.cos(th), 0, math.sin(th)))
 
@@ -18,7 +18,7 @@ dL, dR = Vector((-math.cos(th), 0, math.sin(th))), Vector((math.cos(th), 0, math
 def build(kind):
     B.reset()
     steel, light, weld = B.mat("steel", B.GREY), B.mat("light", B.LIGHT), B.mat("weld", B.WELD)
-    e = 0.03464 if kind == "gap" else -0.050
+    e = 0.010 if kind == "gap" else -0.04352              # g = 2(h0/2+e)cot(th) - b1/sin(th): 44 mm; overlap q = 63 mm = 50 % of p
     I = Vector((0, 0, -h0 / 2 - e))                     # intersection of the diagonal centrelines
     tC = (h0 / 2 + e) / math.sin(th)                    # distance from I to the chord face along each axis
     B.shs("chord", (-Lc, 0, -h0 / 2), (Lc, 0, -h0 / 2), h0, t0, light)

@@ -13,7 +13,7 @@ Typical figure script:
     A = {"chord": (2, -0.1, 0.1)}; B.dim3(A, "L", (0,0,-0.1), (4,0,-0.1), (0,0,-0.5))
     B.setup(cam_loc=(5,-8,4), target=(2,0,0), lens=40, quick=quick, cam=opt.get("cam"))
     B.render(out, "chord", A)                       # -> out/chord.png + out/chord.json
-Merged 2026-11-04 from the D2 (blib.py / ovl2.py), D3 (d3lib.py) and lab (fig_specimens3d_v2.py) scripts."""
+First version 2026-11-04."""
 import bpy, bmesh, math, json, os, sys
 from mathutils import Vector, Matrix
 from bpy_extras.object_utils import world_to_camera_view
@@ -288,7 +288,7 @@ def zsec(name, p0, p1, material, up, h=0.25, f=0.075, t=0.003, flip=False):
 
 
 def z_purlin(name, x, y0, y1, z_base, h=0.25, f=0.075, t=0.0024, material=None):
-    """Z purlin running along global Y at x, bottom flange on z_base (D2 compatibility wrapper around zsec)."""
+    """Z purlin running along global Y at x, bottom flange on z_base (compatibility wrapper around zsec)."""
     return zsec(name, (x, y0, z_base), (x, y1, z_base), material, up=(0, 0, 1), h=h, f=f, t=max(t, 0.003))
 
 

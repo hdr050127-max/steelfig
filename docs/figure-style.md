@@ -1,11 +1,11 @@
 # Figure style (what the figures must look like)
 
-Agreed with the user on 2026-10-09 (D2 report) and kept for D3 and the lab report. Tutors mocked AI-looking
-connection drawings (W8 tutorial) and the lecturer said AI cannot draw a frame correctly (W7L 0:09:47), so the
-figures have to look like a fabricator's manual or a steel textbook, and every part has to be geometrically right.
+Agreed with the user on 2026-10-09 and kept since. Reviewers of student reports have mocked AI-looking
+connection drawings, so the figures have to look like a fabricator's manual or a steel textbook, and every part
+has to be geometrically right.
 
 ## What to draw
-- Only figures the brief, the lecturer or the tutor asks for or that explain a step of the design. A figure that
+- Only figures the brief or the reviewer asks for, or that explain a step of the design. A figure that
   repeats a table is dropped. No software screenshots as evidence.
 - True size, in metres: real section depths and flange widths, real wall thickness visible at every cut end,
   purlins only where they really sit (on the top flange, over the nodes for a truss), fly braces as angles from the

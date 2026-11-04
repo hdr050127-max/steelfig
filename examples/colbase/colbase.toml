@@ -1,9 +1,9 @@
-title = "West column base: pinned (Option 1)"
+title = "Column base: pinned"
 check = true
 
 [[member]]
 name = "col"
-section = "610UB113"
+section = "410UB53.7"
 from = [0, 0, 0]
 to = [0, 0, 1.6]
 up = [1, 0, 0]
@@ -15,23 +15,23 @@ x = 0.0
 column = "col"
 
 [anchors]
-pA = [-0.2435, -0.06, 0.072]
-pB = [0.2435, -0.06, 0.072]
-pC = [0.2435, 0.06, 0.072]
-cA = [-0.2435, -0.06, 0.09]
-cB = [0.2435, -0.06, 0.09]
-cC = [0.2435, 0.06, 0.09]
+pA = [-0.1413, -0.06, 0.072]
+pB = [0.1413, -0.06, 0.072]
+pC = [0.1413, 0.06, 0.072]
+cA = [-0.1413, -0.06, 0.09]
+cB = [0.1413, -0.06, 0.09]
+cC = [0.1413, 0.06, 0.09]
 
 [[dim]]
 name = "sx"
-a = [-0.2435, -0.06, 0.072]
-b = [0.2435, -0.06, 0.072]
+a = [-0.1413, -0.06, 0.072]
+b = [0.1413, -0.06, 0.072]
 off = [0, -0.5, 0]
 
 [[dim]]
 name = "sy"
-a = [0.2435, -0.06, 0.072]
-b = [0.2435, 0.06, 0.072]
+a = [0.1413, -0.06, 0.072]
+b = [0.1413, 0.06, 0.072]
 off = [0.55, 0, 0]
 
 [[view]]
@@ -39,11 +39,11 @@ name = "base3d"
 camera = "auto"
 auto = { focus = ["b_bp"], dir = [0.8, -1.0, 0.55], lens = 45, fill = 0.78 }
 width_cm = 9.5
-draw = [["dim3", "sx", "487", "below"], ["dim3", "sy", "120", "below"]]
-caption = "(a) base of the west column"
+draw = [["dim3", "sx", "283", "below"], ["dim3", "sy", "120", "below"]]
+caption = "(a) base of the column"
   [[view.label]]
   anchor = "b.col"
-  text = "610UB113 west column"
+  text = "410UB53.7 column"
   [[view.label]]
   anchor = "b.bp"
   text = "base plate"
@@ -62,7 +62,7 @@ name = "baseplan"
 ortho = { look = "-z", auto = true, fit = ["b_bp", "b_foot"], fill = 0.85 }     # fitted to the base plate and footing
 cut = { point = [0, 0, 0.35], normal = [0, 0, 1], objects = ["col"], plane = "xy" }  # this view only: column cut 350 mm up, hatched
 caption = "(b) plan of the base plate"
-draw = [["dim", "cA", "cB", "487", 0.6, "below"], ["dim", "cB", "cC", "120", 0.6, "right"]]
+draw = [["dim", "cA", "cB", "283", 0.6, "below"], ["dim", "cB", "cC", "120", 0.6, "right"]]
 
 [figure]
 name = "colbase"

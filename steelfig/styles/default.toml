@@ -1,4 +1,4 @@
-# steelfig default style (CIVL3206, 2026-10-09 rules; look chosen 2026-11-04): fabricator's-manual line art over a
+# steelfig default style (rules of 2026-10-09; look chosen 2026-11-04): fabricator's-manual line art over a
 # lightly realistic steel render: three-point light with soft shadows, light cool grey steel, one warm accent.
 name = "default"
 

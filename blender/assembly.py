@@ -142,9 +142,9 @@ def fly_brace(name, flange_pt, purlin_pt, material, section="75x75x6 EA", both_s
 
 def fly_braces_on(name, purlin_pts, purlin_section, member_depth, member_bf, material, bolt_mat=None, section=None,
                   normal=None, which=None, both_sides=True, reach=None, bolt=None, cleat=True, line_tangent=None, member_tf=None, sides=None, member_tw=None):
-    """fly braces from the restrained (bottom) flange of a rafter up to the purlins, as TTW-00-DR-ST-30202 Typical Fly
+    """fly braces from the restrained (bottom) flange of a rafter up to the purlins, as typical Australian fly brace details draw them
     Brace Detail, placed by the rules below and explained in the rationale file:
-      - angle size by rafter depth from the TTW fly brace table, one M12 8.8/S at each end;
+      - angle size by rafter depth from a typical fly brace table (ASSUMPTION), one M12 8.8/S at each end;
       - an 8 mm cleat plate in the corner of the web and the top of the bottom flange, reaching just past the flange tip,
         so the whole lower end sits above the flange; its face is in line with the purlin web face;
       - the angle's long leg lies flat on the cleat and on the purlin web, on the face that has no flange in the way: the
@@ -167,15 +167,15 @@ def fly_braces_on(name, purlin_pts, purlin_section, member_depth, member_bf, mat
     y1 = tw / 2 + 0.6 * c_w; h1 = 0.45 * c_h                                     # lower bolt from the web centre, above the flange top
     h2 = 0.055 if d_p <= 0.26 else 0.065                                         # purlin bolt: the lower web hole (Stramit B)
     RA.note(name, "angle %s with %s 8.8/S at each end for a %.0f mm deep rafter" % (section, bolt, member_depth * 1000),
-           "angle by rafter depth: 40x40x3 up to 310 UB, 50x50x3 to 410, 65x65x5 to 610, 75x75x5.5 above (drawn 75x75x6)", "ttw2" if not given_sec else "assume")
+           "angle by rafter depth: 40x40x3 up to 310 UB, 50x50x3 to 410, 65x65x5 to 610, 75x75x5.5 above (drawn 75x75x6)", "assume" if not given_sec else "assume")
     RA.note(name, "8 mm cleat %.0f x %.0f mm in the corner of the web and the top of the bottom flange, %.0f mm past the flange tip" % (c_w * 1000, c_h * 1000, 15),
-           "nothing hangs below the flange, the brace pulls on the flange it restrains through the web-flange corner; the size is scaled from the drawing, which gives no dimension", "ttw2")
+           "nothing hangs below the flange, the brace pulls on the flange it restrains through the web-flange corner; the size is scaled from the drawing, which gives no dimension", "assume")
     out = []; anchors = {}
     if which is None: which = list(range(1, len(pts), 2))
     fs = 1 if ptype == "Z" else -1                      # face of the web that is free of flanges: upslope for Z, back for C
     RA.note(name, "long leg on the %s face of the %s purlin web, in line with the cleat face" % ("upslope" if fs > 0 else "downslope (back)", ptype),
            "the bottom flange of a Z purlin points downslope, so the upslope face of the web is free from the rafter up to the top flange; a C has both flanges one side, so its back is free", "purlin")
-    RA.note(name, "purlin bolt %.0f mm above the purlin bottom, the lower web hole" % (h2 * 1000), "Stramit: fly bracing uses the lower web hole; welding to purlins is not recommended; TTW shows the same height", "stramit")
+    RA.note(name, "purlin bolt %.0f mm above the purlin bottom, the lower web hole" % (h2 * 1000), "Stramit: fly bracing uses the lower web hole; welding to purlins is not recommended; typical details shows the same height", "stramit")
     for k in which:
         p = Vector(pts[k]); n = Vector(normal).normalized() if normal else Vector((0, 0, 1))
         t = Vector(line_tangent).normalized() if line_tangent else Vector((0, 1, 0)).cross(n).normalized()
@@ -191,7 +191,7 @@ def fly_braces_on(name, purlin_pts, purlin_section, member_depth, member_bf, mat
             out.append(ob)
             tag = "%s%d%+d" % (name, k, s)
             ang = math.degrees(math.atan2(ex.dot(n), abs(ex.dot(Ys))))
-            RA.check(44 <= ang <= 46 or reach, tag, "brace at %.0f deg; TTW: always 45 deg" % ang, "ttw2")
+            RA.check(44 <= ang <= 46 or reach, tag, "brace at %.0f deg; typical details draw 45 deg" % ang, "assume")
             RA.check(leg / 2 >= 1.25 * df - 1e-9, tag + " bolt", "bolt %.0f mm from the rolled edge of the leg" % (leg / 2 * 1000), "edge")
             RA.check(end >= edge - 1e-9, tag + " bolt", "bolt %.0f mm from the angle end" % (end * 1000), "edge")
             RA.check(d_p - t_p - h2 >= edge, tag + " bolt", "purlin bolt %.0f mm below the top flange" % ((d_p - t_p - h2) * 1000), "edge")
@@ -258,7 +258,12 @@ def model_connections(model, secs, M, top_lift=None):
                 side = 1 if other.x > P.x else -1
                 line = Line([(min(ra.x, rb.x), ra.z if ra.x < rb.x else rb.z), (max(ra.x, rb.x), rb.z if ra.x < rb.x else ra.z)],
                             top_lift if top_lift is not None else SEC_DB.profile(secs[r["id"]])["d"] / 2)
-                out.append(("knee", nid, CN.knee("knee%d" % nid, line, P.x, "m%d" % m["id"], col_sec, "m%d" % r["id"], secs[r["id"]], M, side=side)))
+                c = CN.knee("knee%d" % nid, line, P.x, "m%d" % m["id"], col_sec, "m%d" % r["id"], secs[r["id"]], M, side=side)
+                # the generator trims the rafter at its START; when the rafter's end that meets the column is its b end
+                # (east knee, member running towards the column), the trim belongs to the END of the member
+                rk = "m%d" % r["id"]
+                if re_ == "b" and "cut0" in c["cuts"].get(rk, {}): c["cuts"][rk] = {"cut1": c["cuts"][rk].pop("cut0")}
+                out.append(("knee", nid, c))
             elif len(incl) == 2:                                  # cap: rafter continuous over the column top
                 r1, r2 = incl[0][0], incl[1][0]
                 ra, rb = (Vector(q) for q in model.member_line(r1)); rc, rd = (Vector(q) for q in model.member_line(r2))
@@ -268,12 +273,15 @@ def model_connections(model, secs, M, top_lift=None):
                 out.append(("cap", nid, CN.cap("cap%d" % nid, line, P.x, "m%d" % m["id"], col_sec, raf_sec, M)))
         elif not vert and len(incl) == 2:
             r1, r2 = incl[0][0], incl[1][0]
-            if secs[r1["id"]] == secs[r2["id"]]: continue           # same section: continuous, no splice drawn
             ra, rb = (Vector(q) for q in model.member_line(r1)); rc, rd = (Vector(q) for q in model.member_line(r2))
+            t1, t2 = (rb - ra).normalized(), (rd - rc).normalized()
+            if secs[r1["id"]] == secs[r2["id"]] and abs(abs(t1.dot(t2)) - 1) < 1e-4: continue   # same section, collinear: continuous
+            # different sections, or a change of slope (ridge): a bolted end-plate splice ("apex" at a ridge)
             pts = sorted({(round(q.x, 6), q.z) for q in (ra, rb, rc, rd)})
             line = Line([(x, z) for x, z in pts], top_lift if top_lift is not None else max(SEC_DB.profile(secs[r1["id"]])["d"], SEC_DB.profile(secs[r2["id"]])["d"]) / 2)
             left, right = (r1, r2) if min(ra.x, rb.x) < min(rc.x, rd.x) else (r2, r1)
-            out.append(("splice", nid, CN.splice("splice%d" % nid, line, P.x, "m%d" % left["id"], secs[left["id"]], "m%d" % right["id"], secs[right["id"]], M)))
+            kind = "apex" if secs[left["id"]] == secs[right["id"]] else "splice"
+            out.append((kind, nid, CN.splice("%s%d" % (kind, nid), line, P.x, "m%d" % left["id"], secs[left["id"]], "m%d" % right["id"], secs[right["id"]], M)))
     return out
 
 

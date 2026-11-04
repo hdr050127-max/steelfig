@@ -1,5 +1,5 @@
 """Readers for analysis models, so any analysed structure can be drawn without retyping its geometry.
-Microstran .arc (what the course uses) and a plain CSV (nodes.csv + members.csv). Result: a Model with nodes
+Microstran .arc and a plain CSV pair (<name>-nodes.csv + <name>-members.csv). Result: a Model with nodes
 {id: (x, y, z)} in metres, z up (Microstran's vertical axis is mapped to z), members [{id, a, b, prop, name}],
 props {id: name}. Sections are assigned by a mapping {prop name or member id: designation}."""
 import csv, os
@@ -68,7 +68,7 @@ def read_csv(nodes_csv, members_csv):
 
 def read(path, members_csv=None):
     if path.lower().endswith(".arc"): return read_arc(path)
-    if path.lower().endswith(".csv"): return read_csv(path, members_csv or path.replace("nodes", "members"))
+    if path.lower().endswith(".csv"): return read_csv(path, members_csv or path.replace("nodes", "members"))   # x-nodes.csv + x-members.csv
     raise ValueError("unknown model format: " + path)
 
 

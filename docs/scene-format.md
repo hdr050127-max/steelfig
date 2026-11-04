@@ -59,7 +59,7 @@ per_frame = false
 [[connection]]  type = "splice" … [y = 6.0  b_end = "cut1"]             # b_end: b is declared running towards x (rafter from its knee to the ridge)
 [[connection]]  type = "xbrace" name = "x"  a0  a1  b0  b1  normal  host = "col"  section = "75x75x6 EA"
       # X of angles between work points a0, a1 on one frame and b0, b1 on the next (on the host web at mid-depth): gussets, cleat
-      # plates, bolts from the TTW table, web stiffeners, pack and bolt at the crossing. Anchors: x.a0_gusset x.a0_cleat x.a0_bolt … x.cross
+      # plates, bolts from the bracing table, web stiffeners, pack and bolt at the crossing. Anchors: x.a0_gusset x.a0_cleat x.a0_bolt … x.cross
 [[connection]]  type = "strut"  name = "st" a  b  normal  along  section = "114.3x3.2CHS"
       # CHS strut type A between the gussets at two work points of an xbrace; along = the host member's direction. Anchors: st.a_end st.a_bolt …
 [[connection]]  type = "wsp"    name = "w"  y = 0.0  primary = "pri"  secondary = "sec"

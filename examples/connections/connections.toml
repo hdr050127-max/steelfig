@@ -1,4 +1,5 @@
-# The four standard connections of a portal frame, each generated from the member sections by one [[connection]]
+# The four standard connections of a 24 m portal frame (original example: 410UB53.7 columns, 460UB67.1 haunches,
+# 360UB44.7 rafters, 150x150x6 SHS internal column of a lean-to), each generated from the member sections by one [[connection]]
 # line: (a) rigid knee, (b) bolted end-plate splice, (c) pinned cap plate on an SHS column, (d) pinned base plate.
 # Balloons have no dx/dy: steelfig places them off the steel itself.
 # Every part is placed by the generator (plate sizes, bolt rows, stiffeners, grips) and the members are trimmed
@@ -9,19 +10,19 @@ check = true
 
 [[line]]
 name = "roof"
-points = [[0.0, 10.5102], [6.278, 10.795], [21.993, 11.5079], [30.0, 11.871]]
-lift = 0.2665
+points = [[0.0, 6.0], [12.0, 7.0498], [24.0, 6.0]]
+lift = 0.2269                              # half the 460UB67.1 depth: the top-flange line
 
 # (a) knee at grid A
 [[member]]
 name = "colA"
-section = "610UB113"
-from = [0, 0, 8.0]
+section = "410UB53.7"
+from = [0, 0, 4.0]
 to = "roof.at(0) + V(0, 0, 0.5)"
 up = [1, 0, 0]
 [[member]]
 name = "haunchA"
-section = "530UB92.4"
+section = "460UB67.1"
 from = "roof.at(0)"
 to = "roof.at(1.6)"
 up = "roof.normal(1)"
@@ -35,55 +36,55 @@ column = "colA"
 rafter = "haunchA"
 diagonal = true
 
-# (b) splice at x = 6.278: haunch to mid rafter
+# (b) splice at x = 2.6: haunch to rafter
 [[member]]
 name = "hA"
-section = "530UB92.4"
-from = "roof.at(5.3)"
-to = "roof.at(6.278)"
-up = "roof.normal(5)"
+section = "460UB67.1"
+from = "roof.at(1.7)"
+to = "roof.at(2.6)"
+up = "roof.normal(2)"
 align = "top"
 [[member]]
 name = "rA"
-section = "360UB50.7"
-from = "roof.at(6.278)"
-to = "roof.at(7.3)"
-up = "roof.normal(7)"
+section = "360UB44.7"
+from = "roof.at(2.6)"
+to = "roof.at(3.6)"
+up = "roof.normal(3)"
 align = "top"
 [[connection]]
 type = "splice"
 name = "sp"
 line = "roof"
-x = 6.278
+x = 2.6
 a = "hA"
 b = "rA"
 
-# (c) cap at grid B: haunch continuous over an SHS column
+# (c) cap: rafter continuous over an SHS column (a lean-to post at x = 8)
 [[member]]
 name = "hB"
-section = "530UB82.0"
-from = "roof.at(21.0)"
-to = "roof.at(23.0)"
-up = "roof.normal(22)"
+section = "360UB44.7"
+from = "roof.at(7.0)"
+to = "roof.at(9.0)"
+up = "roof.normal(8)"
 align = "top"
 [[member]]
 name = "colB"
-section = "200x200x9SHS"
-from = [21.993, 0, 9.6]
-to = [21.993, 0, 11.6]
+section = "150x150x6SHS"
+from = [8.0, 0, 5.0]
+to = [8.0, 0, 7.0]
 up = [1, 0, 0]
 [[connection]]
 type = "cap"
 name = "cp"
 line = "roof"
-x = 21.993
+x = 8.0
 column = "colB"
 rafter = "hB"
 
-# (d) base of the west column (drawn at x = 50 so the four details do not touch)
+# (d) base of a column (drawn at x = 50 so the four details do not touch)
 [[member]]
 name = "colBase"
-section = "610UB113"
+section = "410UB53.7"
 from = [50, 0, 0]
 to = [50, 0, 1.6]
 up = [1, 0, 0]
@@ -95,23 +96,23 @@ column = "colBase"
 
 [[dim]]
 name = "lev"
-a = "V(50 - 0.3035 + 0.06, -0.06, 0.06)"
-b = "V(50 + 0.3035 - 0.06, -0.06, 0.06)"
+a = "V(50 - 0.2013 + 0.06, -0.06, 0.06)"
+b = "V(50 + 0.2013 - 0.06, -0.06, 0.06)"
 off = [0, -0.55, 0]
 
 [[view]]
 name = "cn_knee"
-camera = [2.7, -2.9, 9.26, 0.5, 0, 9.86, 45]
-crop = [[-0.7, -0.3, 8.2], [1.9, 0.3, 11.1]]
+camera = [2.7, -2.9, 5.0, 0.5, 0, 5.75, 45]
+crop = [[-0.6, -0.3, 4.1], [1.9, 0.3, 6.6]]
 height_cm = 5.4
 max_width_cm = 7.4
-caption = "(a) West knee: rigid"
+caption = "(a) Knee: rigid"
   [[view.label]]
   anchor = "m.colA"
-  text = "610UB113 column"
+  text = "410UB53.7 column"
   [[view.label]]
   anchor = "m.haunchA"
-  text = "530UB92.4 haunch"
+  text = "460UB67.1 haunch"
   [[view.label]]
   anchor = "kn.ep"
   text = "end plate"
@@ -128,17 +129,17 @@ caption = "(a) West knee: rigid"
 
 [[view]]
 name = "cn_splice"
-camera = [6.63, -2.9, 9.85, 6.278, 0, 10.53, 45]
-crop = [[5.0, 0, 9.75], [7.65, 0, 11.3]]
+camera = [2.95, -2.9, 5.6, 2.6, 0, 6.25, 45]
+crop = [[1.4, 0, 5.5], [3.9, 0, 6.9]]
 height_cm = 5.4
 max_width_cm = 7.4
-caption = "(b) Haunch to mid rafter splice: continuous"
+caption = "(b) Haunch to rafter splice: continuous"
   [[view.label]]
   anchor = "m.hA"
-  text = "530UB92.4 haunch"
+  text = "460UB67.1 haunch"
   [[view.label]]
   anchor = "m.rA"
-  text = "360UB50.7 mid rafter"
+  text = "360UB44.7 rafter"
   [[view.label]]
   anchor = "sp.ep"
   text = "two bolted end plates"
@@ -148,17 +149,17 @@ caption = "(b) Haunch to mid rafter splice: continuous"
 
 [[view]]
 name = "cn_cap"
-camera = [23.34, -2.3, 10.0, 21.993, 0, 10.9, 45]
-crop = [[20.9, -0.3, 9.5], [23.1, 0.3, 11.95]]
+camera = [9.35, -2.3, 5.8, 8.0, 0, 6.55, 45]
+crop = [[6.9, -0.3, 5.0], [9.1, 0.3, 7.4]]
 height_cm = 5.4
 max_width_cm = 7.4
 caption = "(c) Rafter over an SHS column: pinned"
   [[view.label]]
   anchor = "m.hB"
-  text = "530UB82.0 haunch, continuous over the column"
+  text = "360UB44.7 rafter, continuous over the post"
   [[view.label]]
   anchor = "cp.col"
-  text = "200$\\times$200$\\times$9.0 SHS"
+  text = "150$\\times$150$\\times$6 SHS post"
   [[view.label]]
   anchor = "cp.capp"
   text = "cap plate"
@@ -171,21 +172,21 @@ caption = "(c) Rafter over an SHS column: pinned"
 
 [[view]]
 name = "cn_base"
-camera = [52.1, -2.9, 1.9, 50.05, 0, 0.35, 42]
-crop = [[49.0, -0.5, -0.8], [51.1, -0.5, 1.8]]
+camera = [51.9, -2.7, 1.8, 50.05, 0, 0.35, 42]
+crop = [[49.1, -0.5, -0.8], [51.0, -0.5, 1.8]]
 height_cm = 5.4
 max_width_cm = 7.4
-caption = "(d) West column base: pinned"
-draw = [["dim3", "lev", "487", "below"]]
+caption = "(d) Column base: pinned"
+draw = [["dim3", "lev", "283", "below"]]
   [[view.label]]
   anchor = "bs.col"
-  text = "610UB113 column"
+  text = "410UB53.7 column"
   [[view.label]]
   anchor = "bs.bp"
   text = "base plate"
   [[view.label]]
   anchor = "bs.ab"
-  text = "four M24 anchor bolts inside the flanges"
+  text = "four holding-down bolts inside the flanges"
   [[view.label]]
   anchor = "bs.ab2"
   text = ""

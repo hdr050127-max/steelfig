@@ -8,7 +8,7 @@ who asked, and build only after they confirm. Most wrong figures come from a wro
 Figure brief: <working title>
 
 Purpose      what the figure must explain, in one sentence, and where it goes (report section / slide / handout)
-Source       what says this figure is needed or what it illustrates (brief page, lecture week, tutor note, Ed thread,
+Source       what says this figure is needed or what it illustrates (brief page, lecture, reviewer's note,
              AS 4100 clause, standard detail) — this ends up in the caption
 Subject      the ONE thing in the accent colour
 Structure    what is drawn and at what sizes: members with catalogue designations, lengths shown, spacing of

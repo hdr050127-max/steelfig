@@ -1,6 +1,6 @@
 # Portal-frame knee at true size (the steelfig TOML format). Build with:
 #   steelfig build examples/knee/knee.toml /tmp/knee_out --report /tmp/knee_rep
-title = "West knee: what restrains the designed members"
+title = "Portal frame knee: what restrains the designed members"
 check = true                               # report members passing through each other (> 5 cm3)
 # balloons carry no dx/dy: placed automatically off the steel; add dx/dy to a label to pin it
 

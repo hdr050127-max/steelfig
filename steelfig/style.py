@@ -1,5 +1,5 @@
-"""Style sheets: one TOML per course / report, read by both the Blender side (materials, line weight) and the
-overlay (accent colour, fonts). steelfig/styles/default.toml is the CIVL3206 style agreed 2026-10-09."""
+"""Style sheets: one TOML per report or course, read by both the Blender side (materials, line weight) and the
+overlay (accent colour, fonts). steelfig/styles/default.toml is the house style."""
 import os, tomllib
 
 STYLES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "styles")
