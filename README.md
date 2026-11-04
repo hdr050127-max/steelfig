@@ -24,7 +24,24 @@ Microstran `.arc` model. Output: a LaTeX fragment for the report, a preview PDF,
 2. Python 3.11+ with Pillow: `pip install pillow` (only for flattening the renders to JPEG).
 3. For preview PDFs and LaTeX reports: any TeX (TinyTeX, MacTeX, MiKTeX) with `pdflatex`. For PNG output:
    `pdftoppm` (`brew install poppler`) or `pip install pymupdf`.
-4. `git clone … steelfig` and check: `steelfig/bin/steelfig doctor`
+4. Get the tool and check the setup:
+
+```bash
+git clone https://github.com/hdr050127-max/steelfig ~/steelfig && ~/steelfig/bin/steelfig doctor
+```
+
+### With Claude Code
+
+The `skills/blender-figures` folder is a Claude Code skill that drives steelfig the way we use it: one-line
+request → written brief for confirmation → scene → checks → figure. Install it for your own Claude Code with
+
+```bash
+npx skills add hdr050127-max/steelfig --skill blender-figures -g -a claude-code -y
+```
+
+(or copy `skills/blender-figures/` into `~/.claude/skills/`). Then ask for a figure in plain words, e.g.
+"draw the rafter-to-column knee with its purlins and fly braces". Set `STEELFIG_HOME` if the clone is not in
+`~/steelfig` or `~/Developer/steelfig`.
 
 ## First figure
 
