@@ -45,7 +45,7 @@ def run_blender(script, out_dir, extra=()):
     lines = [l for l in log.splitlines() if l.strip() and not l.startswith(("Blender ", "Read prefs", "Fra:"))]
     err = [l for l in lines if l.startswith("ERROR")]
     if err: sys.exit("\n".join(err))
-    print("\n".join(lines[-40:] if bad else [l for l in lines if l.startswith(("rendered", "built", "WARNING", "CLASH", "clash check", "camera ", "glb"))]))
+    print("\n".join(lines[-40:] if bad else [l for l in lines if l.startswith(("rendered", "built", "WARNING", "CLASH", "clash check", "camera ", "glb", "REALISM", "rationale"))]))
     if bad: sys.exit("Blender failed on %s" % script)
 
 

@@ -10,6 +10,7 @@ Units metres. `line` is an assembly.Line (the rafter TOP line); members are refe
 import math
 from mathutils import Vector
 import bfig as B
+import rationale as RA
 from steelfig import sections as SEC_DB
 
 X = Vector((1, 0, 0)); Y = Vector((0, 1, 0)); Z = Vector((0, 0, 1))
@@ -57,6 +58,13 @@ def knee(name, line, x_col, col, col_sec, raf, raf_sec, M, side=1, ep_t=None, ep
     ep_t, bolt, stiff_t, bolt_in, row_off = g["ep_t"], g["bolt"], g["stiff_t"], g["bolt_in"], g["row_off"]
     xf = x_col + side * dC / 2                           # inside flange face of the column
     xp = xf + side * ep_t                                # rafter end face (plate face)
+    RA.note(name, "end plate %.0f mm thick, %s bolts, gauge %.0f mm about the web, rows %.0f mm from each rafter flange, stiffeners %.0f mm" % (
+        ep_t * 1000, bolt, 2 * bolt_in * 1000, row_off * 1000, stiff_t * 1000), "sized by the rafter depth %.0f mm (connections.defaults)" % (dR * 1000), "asi_ep")
+    RA.note(name, "rafter ends on the plate face %.0f mm off the column flange; column top cut flush under the roof line" % (ep_t * 1000),
+           "the plate bears on the column flange; the column must not poke through the rafter top", "ttw")
+    RA.note(name, "column stiffeners in line with both rafter flanges", "flange forces of a moment connection go into the column web as concentrated loads", "asi_ep")
+    RA.check(row_off >= 1.5 * SEC_DB.bolt(bolt)["d"], name, "bolt row %.0f mm from the flange: edge distance to the plate end" % (row_off * 1000), "edge")
+    RA.check(2 * bolt_in >= 2.5 * SEC_DB.bolt(bolt)["d"], name, "bolt gauge %.0f mm: minimum pitch 2.5 d_f" % (2 * bolt_in * 1000), "pitch")
     n = line.normal(x_col + side * 0.1); t = line.tangent(x_col + side * 0.1)
     ptop = line.at(x_col)                                # roof line over the column axis
     cuts = {col: {"cut1": (ptop, n)}, raf: {"cut0": (line.at(xp), side * X)}}
@@ -91,6 +99,9 @@ def splice(name, line, x, a, a_sec, b, b_sec, M, ep_t=None, ep_ext=0.05, bolt=No
     ep_t, bolt, bolt_in, row_off = g["ep_t"], g["bolt"], g["bolt_in"], g["row_off"]
     cuts = {a: {"cut1": (line.at(x - ep_t), X)}, b: {"cut0": (line.at(x + ep_t), X)}}
     anchors = {}
+    RA.note(name, "two end plates %.0f mm back to back at x = %.3f m, %s bolts above and below each flange of the shallower section" % (ep_t * 1000, x, bolt),
+           "plates span the deeper section; the bolts work on the shallower flanges", "ttw")
+    RA.check(row_off >= 1.5 * SEC_DB.bolt(bolt)["d"], name, "bolt row %.0f mm from the flange" % (row_off * 1000), "edge")
 
     def build():
         ps = line.at(x); zt = ps.z; zb = zt - dmax / n.z
@@ -115,6 +126,8 @@ def cap(name, line, x, col, col_sec, raf_sec, M, cap_t=None, bolt=None, stiff_t=
     under = line.at(x) - n * dR                                                  # underside of the rafter over the column axis
     cuts = {col: {"cut1": (under - n * cap_t, n)}}                              # column top cut parallel to the roof
     anchors = {}
+    RA.note(name, "cap plate %.0f mm on the roof slope, column cut parallel to the roof, %s bolts 45 mm outside the column walls, web stiffeners over the walls" % (cap_t * 1000, bolt),
+           "a flat plate under a sloping rafter would leave a wedge; bolts cannot be inside a tube; the rafter web must carry the wall reactions", "ttw")
 
     def build():
         B.plate(name + "_cap", under - n * cap_t / 2, tt, Y, (cw + 0.16, max(bfR, C["b"]) + 0.04, cap_t), M["steel"])
@@ -137,6 +150,8 @@ def base(name, x, col, col_sec, M, z0=0.0, plate_t=None, grout=0.040, bolt=None,
     g = defaults(dC); plate_t = plate_t or g["plate_t"]; bolt = bolt or g["hd_bolt"]
     cuts = {col: {"cut0": (Vector((x, 0, z0 + grout + plate_t)), Z)}}
     anchors = {}
+    RA.note(name, "base plate %.0f mm on %.0f mm grout, four %s holding-down bolts %.0f mm inside the flange faces" % (plate_t * 1000, grout * 1000, bolt, bolts_in * 1000),
+           "pinned base: bolts inside the flanges give little moment capacity; grout takes the levelling tolerance", "ttw")
 
     def build():
         B.plate(name + "_foot", Vector((x + 0.05, 0, z0 - footing[2] / 2 - 0.0)), X, Y, footing, M["conc"])

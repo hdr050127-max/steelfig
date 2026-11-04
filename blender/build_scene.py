@@ -1,7 +1,7 @@
 """Build and render a scene.json (compiled from a steelfig TOML scene) inside Blender.
 Run by steelfig/scene.py: Blender --background --python build_scene.py -- <out_dir> <scene.json> [quick]"""
 import sys, os, json, math
-import bfig as B, assembly as A, connections as CN
+import bfig as B, assembly as A, connections as CN, rationale as R
 from mathutils import Vector
 from steelfig import sections as SEC_DB
 
@@ -24,7 +24,7 @@ class _at:
     def __exit__(self, t, e, tb):
         if e is not None and not isinstance(e, SystemExit): fail(e)
         WHERE.pop(); return False
-B.reset(); M = B.mats()
+B.reset(); M = B.mats(); R.reset()
 lines = {l["name"]: A.Line(l["points"], l.get("lift", 0.0)) for l in sc.get("line", [])}
 
 
@@ -132,8 +132,8 @@ for fb in sc.get("fly_brace", []):
         mp = SEC_DB.profile(members[fb["member"]].name if False else fb["section_of"]) if "section_of" in fb else None
         d_m, b_m = (num(fb["member_depth"]), num(fb["member_bf"])) if "member_depth" in fb else (mp["d"], mp["b"])
         _, fa = A.fly_braces_on(fb.get("name", "fb"), pts, pu["section"], d_m, b_m, mat(fb.get("material", "dark")), mat("dark"),
-                                fb.get("section", "75x75x6 EA"), normal=L.normal(x0 + 0.01), which=fb.get("at"), both_sides=fb.get("both_sides", True),
-                                cleat=fb.get("cleat", True), line_tangent=L.tangent(x0 + 0.01))
+                                fb.get("section"), normal=L.normal(x0 + 0.01), which=fb.get("at"), both_sides=fb.get("both_sides", True),
+                                cleat=fb.get("cleat", True), line_tangent=L.tangent(x0 + 0.01), bolt=fb.get("bolt"), reach=num(fb["reach"]) if "reach" in fb else None)
         fly_anchors.update(fa)
     else:                                                   # legacy: straight angle between two points
         A.fly_brace(fb["name"], pt(fb["flange_pt"]), pt(fb["purlin_pt"]), mat(fb.get("material", "dark")), fb.get("section", "75x75x6 EA"), fb.get("both_sides", True))
@@ -167,6 +167,7 @@ for w in sc.get("wave", []):
     with _at('[[wave]] name = "%s"' % w.get("name", "?")):
         An[w["name"]] = B.wave(pt(w["a"]), pt(w["b"]), w.get("amp", 0.3), vec(w.get("side", [0, -1, 0])))
 print("built", len(B.all_meshes()), "objects")
+R.dump(os.path.join(out, (sc.get("figure", {}).get("name") or "figure") + "_rationale.md"), sc.get("title", ""))
 B.export_glb(os.path.join(out, "scene.glb"))
 if sc.get("check", False) or "check" in opt:
     B.check_clashes(min_cm3=float(sc.get("check_min_cm3", 5.0)))

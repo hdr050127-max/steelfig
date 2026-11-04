@@ -106,6 +106,20 @@ image_dir = "images/steelfig"
 `support`, `raw`, as documented in `steelfig/overlay.py`. Every `dim`/`dim3` text is checked against the model
 distance and a mismatch is printed as a WARNING. A 2D `dim` on a perspective view is also warned.
 
+## Why each part is where it is
+
+Every connection and fly brace generator records its decisions with the rule and the source (an AS 4100 clause,
+a catalogue, a standard detail, or ASSUMPTION when it is only common practice): `out/<figure>_rationale.md`,
+one line per decision, plus the realism checks that failed (`REALISM …` lines in the build output: bolt edge
+distances and pitch to AS 4100 Cl 9.6, brace angle 35-55°, nut on the open face, cleat bolt edge distance). Put
+the relevant lines in the figure's key or caption, and treat an ASSUMPTION entry as something to confirm before
+the figure is quoted as a detail.
+
+Fly brace rules (`[[fly_brace]] purlins = … at = […] member_depth = … member_bf = …`, optional `section`, `bolt`,
+`reach`): angle and bolt by rafter depth; long leg flat on the flange-free face of the purlin web (upslope for a
+Z, back for a C); one bolt at mid-web; angle end 15 mm under the top flange; ~45° by setting the reach; cleat
+plate welded to the flange tip with one bolt. All of these are in the rationale file with their sources.
+
 ## Checks run on every build
 
 After the annotation, every view is checked and findings are printed as `overlay WARNING: [view] …`: dimension

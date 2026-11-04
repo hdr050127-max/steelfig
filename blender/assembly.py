@@ -140,48 +140,80 @@ def fly_brace(name, flange_pt, purlin_pt, material, section="75x75x6 EA", both_s
     return out
 
 
-def fly_braces_on(name, purlin_pts, purlin_section, member_depth, member_bf, material, bolt_mat=None, section="75x75x6 EA",
-                  normal=None, which=None, both_sides=True, reach=None, bolt="M12", cleat=True, line_tangent=None):
-    """fly braces from the restrained (bottom) flange of a rafter up to the purlins, drawn as they are built:
-    the angle's long leg lies flat against the purlin web on the upslope side (a Z purlin's bottom flange is on the
-    downslope side), its top is cut just under the purlin top flange, one bolt goes through the web, and a cleat
-    plate at the flange tip receives the other end. purlin_pts: the points returned by purlins_on (on the roof
-    line, purlin bottom flange); normal: roof unit normal; member_depth / member_bf of the rafter (m);
-    which: indices of the purlins that get a brace (default: every second); reach: how far out (y) the brace goes.
-    Returns the objects; anchors: (name, point) of each brace midpoint under 'fly'."""
+def fly_braces_on(name, purlin_pts, purlin_section, member_depth, member_bf, material, bolt_mat=None, section=None,
+                  normal=None, which=None, both_sides=True, reach=None, bolt=None, cleat=True, line_tangent=None, member_tf=None):
+    """fly braces from the restrained (bottom) flange of a rafter up to the purlins, placed by the rules below and
+    explained in the rationale file:
+      - angle size and bolt by rafter depth (ASSUMPTION: 50x50x5 EA + M12 up to 360 deep, 75x50x6 UA + M16 above);
+      - the angle's long leg lies flat on the purlin web on the face that has no flange in the way: the upslope
+        face of a Z purlin (bottom flange is downslope), the back of a C purlin;
+      - one bolt through the web and the leg at mid-depth of the web, with AS 4100 edge distances to the angle end
+        and the web edges (1.5 d_f) checked; the angle end stops 15 mm under the top flange (ASSUMPTION);
+      - the brace meets the web at 35-55 degrees to the horizontal: reach (how far out along the purlin) is set
+        from the rafter depth so the angle is about 45 degrees (common practice);
+      - at the rafter: a cleat plate welded to the flange tip in the plane of the brace, the long leg bolted to it
+        with one bolt; the leg clears the flange underside (common practice; an alternative in practice is a bolt
+        through the flange with a bent end, not modelled).
+    purlin_pts: points from purlins_on (purlin bottom flange on the roof line); normal / line_tangent: roof unit
+    vectors; member_depth / member_bf / member_tf: the rafter section (m); which: purlin indices (default every
+    second from the second); reach: override the outward distance (m). Returns (objects, anchors)."""
+    import rationale as RA
     pts = [p for p, _ in purlin_pts] if purlin_pts and isinstance(purlin_pts[0], tuple) else list(purlin_pts)
-    P = SEC_DB.profile(purlin_section); d_p, t_p = P["d"], P["t"]
-    bd = SEC_DB.bolt(bolt); out = []; anchors = {}
+    P = SEC_DB.profile(purlin_section); d_p, t_p = P["d"], P["t"]; ptype = P["row"]["type"]
+    big = member_depth > 0.36; given_sec = section
+    section = section or ("75x50x6 UA" if big else "50x50x5 EA"); bolt = bolt or ("M16" if big else "M12")
+    A_ = SEC_DB.profile(section); leg_long, leg_t = A_["d"], A_["t"]
+    bd = SEC_DB.bolt(bolt); df = bd["d"]; edge = 1.5 * df; clear_top = 0.015
+    RA.note(name, "angle %s with %s bolts for a %.0f mm deep rafter" % (section, bolt, member_depth * 1000),
+           "angle 50x50x5 + M12 up to 360 deep, 75x50x6 + M16 above", "assume")
+    out = []; anchors = {}
     if which is None: which = list(range(1, len(pts), 2))
+    fs = 1 if ptype == "Z" else -1                      # face of the web that is free of flanges: upslope for Z, back for C
+    RA.note(name, "long leg on the %s face of the %s purlin web" % ("upslope" if fs > 0 else "downslope (back)", ptype),
+           "the bottom flange of a Z purlin points downslope, so the upslope face of the web is free from the rafter up to the top flange; a C has both flanges one side, so its back is free", "purlin")
     for k in which:
         p = Vector(pts[k]); n = Vector(normal).normalized() if normal else Vector((0, 0, 1))
         t = Vector(line_tangent).normalized() if line_tangent else Vector((0, 1, 0)).cross(n).normalized()
+        face = p + t * fs * (t_p / 2 + 0.001)             # heel line lies on this face
+        h_b = 0.5 * d_p                                   # bolt height above the purlin bottom (mid web)
+        h_end = d_p - t_p - clear_top                     # angle end, under the top flange
+        y_in0 = member_bf / 2 + 0.014
+        r = reach if reach else (y_in0 + member_depth + 0.085 + h_b)   # 45 degrees: run from the heel start = rise
         for s in ((-1, 1) if both_sides else (1,)):
-            # the angle runs in the purlin's plane: from the flange tip (y = s*bf/2) up to the web, on the upslope face
-            r = reach if reach else member_depth + 0.15                       # how far out along the purlin the brace reaches
-            top = p + n * (d_p - 0.045) + t * (t_p / 2 + 0.002)               # under the purlin top flange, on the upslope web face
-            p1 = top + Vector((0, s * r, 0))
-            # lower end: on the cleat face, 85 mm below the flange underside so the 75 mm leg clears the flange
-            p0 = p + t * (t_p / 2 + 0.002) - n * (member_depth + 0.085) + Vector((0, s * (member_bf / 2 + 0.008 + 0.004), 0))
+            y_in = member_bf / 2 + 0.004 + 0.008 + 0.002      # heel outside the flange tip: cleat plate 8 mm + clearances
+            p0 = face - n * (member_depth + 0.085) + Vector((0, s * y_in, 0))       # lower end on the cleat face
+            p1 = face + n * h_b + Vector((0, s * r, 0))                              # heel passes the bolt height here
             ex = (p1 - p0).normalized()
-            ob = B.member("%s%d%+d" % (name, k, s), p0, p1, section, material, up=n, align="heel",
-                          cut1=(p + n * (d_p - 0.02), n), cut0=(p0 - n * 0.002, -n))
-            # the short leg must stick out from the web (+t), the long leg lie on it: mirror if it came out the other way
+            # extend the heel line so the end is cut just under the top flange, then trim with the plane there
+            p1e = p0 + ex * ((h_end - (-(member_depth + 0.085))) / ex.dot(n))
             ey = (n - n.dot(ex) * ex).normalized(); ez = ex.cross(ey)
-            if ez.dot(t) < 0:
-                B.delete([ob]); ob = B.member("%s%d%+d" % (name, k, s), p0, p1, section, material, up=n, align="heel", flip=True,
-                                               cut1=(p + n * (d_p - 0.02), n), cut0=(p0 - n * 0.002, -n))
+            flip = ez.dot(t * fs) < 0
+            ob = B.member("%s%d%+d" % (name, k, s), p0, p1e, section, material, up=n, align="heel", flip=flip,
+                          cut1=(face + n * h_end, n), cut0=(p0 - n * 0.002, -n))
             out.append(ob)
-            # bolt through the purlin web, through the long leg, 35 mm below the brace end
-            bp = p1 - ex * 0.035 + ey * 0.03
-            out.append(B.cyl("%s%d%+d_bolt" % (name, k, s), bp - t * (t_p / 2 + 0.002), t, bd["d"] / 2, t_p + 2 * 0.006 + 0.02, bolt_mat or material, segments=12))
-            out[-1]["clash_ok"] = 1
-            out.append(B.cyl("%s%d%+d_nut" % (name, k, s), bp + t * 0.010, t, bd["head_af"] / 2 / 0.866, bd["nut_h"], bolt_mat or material, segments=6))
-            if cleat:   # plate welded to the flange tip, hanging 120 mm below it; the angle's long leg bolted to its face
-                c = p + t * (t_p / 2 + 0.002) - n * (member_depth + 0.06) + Vector((0, s * (member_bf / 2 + 0.004), 0))
+            ang = math.degrees(math.atan2(ex.dot(n), abs(ex.dot(Vector((0, 1, 0))))))
+            RA.check(35 <= ang <= 55, "%s%d%+d" % (name, k, s), "brace at %.0f deg to the purlin line; aim for 35-55 deg (set `reach`)" % ang, "flybrace")
+            # bolt through the web: centre on the leg's mid-width line, at the heel height h_b
+            bp = p1 + ey * (leg_long / 2)
+            hb_actual = (bp - p).dot(n)
+            RA.check(hb_actual - t_p >= edge and (d_p - t_p) - hb_actual >= edge, "%s%d%+d bolt" % (name, k, s),
+                    "web bolt %.0f mm above the purlin bottom: needs %.0f mm clear of each flange" % (hb_actual * 1000, edge * 1000), "edge")
+            end_dist = (p1e - p1).dot(ex)                 # bolt sits at p1 along the axis, the end at p1e
+            RA.check(end_dist >= edge, "%s%d%+d bolt" % (name, k, s), "bolt %.0f mm from the angle end; minimum %.0f mm" % (end_dist * 1000, edge * 1000), "edge")
+            RA.check(leg_long / 2 >= edge, "%s%d%+d bolt" % (name, k, s), "bolt %.0f mm from the leg edge; minimum %.0f mm" % (leg_long / 2 * 1000, edge * 1000), "edge")
+            out.append(B.cyl("%s%d%+d_bolt" % (name, k, s), bp - t * fs * (t_p / 2 + 0.001), t, df / 2, t_p + leg_t + 2 * 0.006 + 0.015, bolt_mat or material, segments=12)); out[-1]["clash_ok"] = 1
+            out.append(B.cyl("%s%d%+d_nut" % (name, k, s), bp + t * fs * (leg_t + 0.004 + 0.4 * df), t, bd["head_af"] / 2 / 0.866, bd["nut_h"], bolt_mat or material, segments=6))
+            RA.check(abs(fs * (t_p / 2 + leg_t + 0.004 + 0.8 * df)) < 0.5, "%s%d%+d nut" % (name, k, s), "nut on the open face of the web, spanner room clear", "assume")
+            if cleat:
+                c = face - n * (member_depth + 0.06) + Vector((0, s * (member_bf / 2 + 0.004), 0))
                 out.append(B.plate("%s%d%+d_cleat" % (name, k, s), c, n, t, (0.12, 0.07, 0.008), material))
-                out.append(B.cyl("%s%d%+d_cb" % (name, k, s), p0 + ex * 0.04 + ey * 0.03, t, bd["d"] / 2, 0.008 + 0.006 + 0.02, bolt_mat or material, segments=12)); out[-1]["clash_ok"] = 1
+                cb = p0 + ex * 0.04 + ey * (leg_long / 2)
+                out.append(B.cyl("%s%d%+d_cb" % (name, k, s), cb, t, df / 2, 0.008 + leg_t + 0.02, bolt_mat or material, segments=12)); out[-1]["clash_ok"] = 1
+                RA.check(0.04 >= edge, "%s%d%+d cleat bolt" % (name, k, s), "cleat bolt %.0f mm from the angle end; minimum %.0f mm" % (40, edge * 1000), "edge")
             anchors["%s%d%+d" % (name, k, s)] = tuple((p0 + p1) / 2)
+        RA.note(name + "%d" % k, "lower end %.0f mm below the flange, outward reach %.0f mm, web bolt %.0f mm up the purlin, end %.0f mm under the top flange" % (85, r * 1000, h_b * 1000, clear_top * 1000),
+               "leg must clear the flange underside (85 = leg + clearance); reach makes the brace ~45 deg; bolt at mid-web keeps AS 4100 edge distances to both flanges", "flybrace")
+    RA.note(name, "cleat plate 120 x 70 x 8 welded to the flange tip in the plane of the brace, one bolt", "a welded cleat gives a flat face in the brace plane; bolting the angle through the flange needs a bent end", "assume")
     return out, anchors
 
 

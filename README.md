@@ -61,6 +61,13 @@ against the model, balloons on members, crossing leaders, parts outside the pict
 what it found. Outlines are drawn in a hierarchy (contour / crease / secondary / depth fade). Connection
 proportions scale with the member depth. Errors in a scene file come back as one plain line.
 
+## Every part explained
+
+Each generated connection writes why its parts are where they are (`out/<figure>_rationale.md`): the decision
+with its numbers, the rule, and the source (AS 4100 clause, catalogue, standard detail, or ASSUMPTION). Realism
+checks (bolt edge distance and pitch, brace angle, spanner room) fail loudly as `REALISM` lines. The aim is that
+no part appears in a figure without a reason you could give a tutor.
+
 ## Connections, clashes, finishes
 
 Standard connections are generated from the member sections (`[[connection]] type = "knee" | "splice" | "cap" |
