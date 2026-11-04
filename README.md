@@ -50,6 +50,9 @@ bin/steelfig build examples/knee/knee.toml /tmp/knee_out --report /tmp/knee_rep 
 open /tmp/knee_rep/preview/prev_knee.pdf
 ```
 
+Work in two stages: `--plain` renders the geometry with no labels so you (or the person you draw for) can check
+sections, positions and connections first; `steelfig annotate` then adds balloons, dimensions and highlights
+without re-rendering. One view per figure unless more are asked for.
 `--quick` renders small (40 %, fewer samples) to check the composition; drop it for the final: by default a view
 is rendered at 4200 × 2940 px with 128 samples, ambient occlusion and soft shadows (about 3 s per view on an
 Apple-silicon Mac), which prints at ~600 dpi for a 14 cm figure. The knobs are in `steelfig/styles/default.toml`

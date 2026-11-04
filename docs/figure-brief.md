@@ -16,8 +16,10 @@ Structure    what is drawn and at what sizes: members with catalogue designation
              — and which of these are assumptions (write "assumed: …")
 Explanation  the engineering content drawn in full: dimensions (name + value + between what), centrelines,
              buckled shapes, tributary areas, load arrows, grid names, section cuts
-Views        each view: perspective (from where, looking at what) or orthographic (direction, what it crops to);
-             size on the page; which views sit side by side
+Views        ONE view unless the request asks for more or the explanation cannot be read from one; each extra
+             view gets a one-line reason ("plan: the bolt pattern is hidden in the perspective") and is a
+             question to the person, not a decision. Each view: perspective (from where, looking at what) or
+             orthographic (direction, what it crops to); size on the page; which views sit side by side
 Labels       the numbered parts, in order, with the text of each key line
 Style        style sheet; anything that departs from the defaults (colour, line weight)
 Checks       what must be true (dimension texts match the model; no members passing through each other;
@@ -55,4 +57,7 @@ assumptions = ["bolt size", "footing size"]             # reported to the person
 ```
 
 After confirmation: write the scene file straight from the brief (one line of the brief → one table of the
-scene), build with `--quick --check`, compare the preview with the brief line by line, then render full size.
+scene) and build it **plain** first (`--quick --check --plain`): no labels, no dimensions. Show that render to the
+person and ask whether the geometry is right (sections, positions, connections, what is cut away). Only after
+they agree, add the annotation (`steelfig annotate`), run the checks, compare with the brief, then render full
+size. Geometry mistakes are cheap to fix before labels are placed and expensive after.

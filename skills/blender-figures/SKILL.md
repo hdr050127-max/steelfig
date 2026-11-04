@@ -29,7 +29,10 @@ without a generator) and say which size you chose. Write `brief.toml` next to it
 assumptions) so the scene can be checked against the brief by machine. Show the brief, wait for the person to
 confirm or correct, then build. This step is what makes the figure right; skip it only if the person asks you to.
 
-## Step 2: build the scene
+Views: one per figure unless the person asked for more. Every extra view you think is needed is a line in the
+brief with its reason, and the person decides. Never add panels on your own judgement.
+
+## Step 2: build the geometry and show it plain
 
 Three routes, in order of preference:
 
@@ -45,11 +48,19 @@ Three routes, in order of preference:
 3. **Python API** (`examples/kjoint/`, `docs/python-api.md`) for what the scene format cannot express: boolean
    cuts, weld rings, overlapping SHS joints.
 
-Build with `steelfig build scene.toml <out_dir> --report <report_dir> --quick --check`. The build chooses a
-camera if none is given (`camera = "auto"`), places balloons that have no `dx`/`dy`, draws the outlines in a
-hierarchy, and writes `<out>/<figure>_rationale.md` with every generated part's position, rule and source.
+Build **plain** first: `steelfig build scene.toml <out_dir> --report <report_dir> --quick --check --plain`. It
+renders the views with no labels and writes `<rep>/preview/prev_<figure>_plain.pdf` and the view JPEGs. Show
+that render to the person (SendUserFile or the preview) and ask one question: is the geometry right (sections,
+positions, connections, cut-aways)? Fix and rebuild until they say yes; offer `steelfig view` if they want to
+choose the camera. Do not add a single label before this.
 
-## Step 3: make the output silent, then show it
+## Step 3: annotate, check, finish
+
+`steelfig annotate scene.toml <out_dir> --report <rep>` adds balloons (placed automatically when they have no
+`dx`/`dy`), dimensions and highlights without re-rendering; `<out>/<figure>_rationale.md` has every generated
+part's position, rule and source.
+
+### Make the output silent, then show it
 
 Treat every line of the build output as a task:
 - `overlay WARNING` (dimension text vs model, balloon on a member, leaders crossing, anchor outside the picture,

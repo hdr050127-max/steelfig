@@ -1,7 +1,8 @@
 """steelfig command line.
-  steelfig build <scene.toml> <out_dir> [--report <dir>] [--quick] [--no-preview] [--png] [--check]
+  steelfig build <scene.toml> <out_dir> [--report <dir>] [--quick] [--no-preview] [--png] [--check] [--plain]
                                               TOML scene -> renders, fig_<name>.tex, preview PDF (+ PNG for Word);
-                                              --check reports members that pass through each other (CLASH lines)
+                                              --check reports members that pass through each other (CLASH lines);
+                                              --plain stops after the renders: geometry only, no labels (then `annotate`)
   steelfig build-all <folder | set.toml> <out_root> [--report <dir>] [--quick] [--check]
                                               every scene of a figure set with one style and shared [figure] defaults
   steelfig annotate <scene.toml> <out_dir> [--report <dir>] [--png]                 redo labels / highlights only (no Blender)
@@ -33,7 +34,9 @@ def main(argv=None):
         if png: a.remove("--png")
         chk = "--check" in a
         if chk: a.remove("--check")
-        scene.build(a[0], a[1], rep, quick, prev, png, chk); return 0
+        pl = "--plain" in a
+        if pl: a.remove("--plain")
+        scene.build(a[0], a[1], rep, quick, prev, png, chk, not pl); return 0
     if cmd == "build-all":
         from steelfig import scene
         rep = None

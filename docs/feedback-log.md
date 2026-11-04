@@ -12,3 +12,5 @@ the style sheet, or a generator). A correction that is not written down will be 
 | 2026-11-04 | user | every part's position and connection must be explainable and realistic | rationale.py, docs/details/ |
 | 2026-11-04 | user | a one-line request must first be expanded into a brief and confirmed | figure-brief.md, SKILL.md step 1 |
 | 2026-11-04 | user | steel should look like steel, not a white model; grades may differ | style finishes by product type |
+| 2026-11-04 | user | figures came with many sub-views nobody asked for; our own judgement must be stated before it is drawn | figure-brief.md: one view by default, extra views justified and asked |
+| 2026-11-04 | user | after the model is built, show the plain render for a geometry check before any annotation | build --plain, SKILL.md step 2 checkpoint |

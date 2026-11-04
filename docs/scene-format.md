@@ -143,7 +143,9 @@ mild fade with distance from the camera. This is what separates a manual-style d
 
 ## Two-stage work
 
-A build renders every view once (`<view>.png` plus `<view>_id.png`, a flat-colour image that says which pixel
+`steelfig build … --plain` renders the views and stops: `<rep>/preview/prev_<figure>_plain.pdf` and the view
+JPEGs show the geometry with nothing on it, which is what to check first. `steelfig annotate` then adds the
+annotation. A build renders every view once (`<view>.png` plus `<view>_id.png`, a flat-colour image that says which pixel
 belongs to which object). Labels, highlights, fills and dimensions are drawn afterwards from those files, so you can
 start with a view that has no annotation at all, then add `[[view.label]]`, `highlight`, `draw` items and rerun
 only `steelfig annotate scene.toml out/ --report rep/` (no Blender, under a second). Re-render only when the

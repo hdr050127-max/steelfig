@@ -49,10 +49,10 @@ def run_blender(script, out_dir, extra=()):
     if bad: sys.exit("Blender failed on %s" % script)
 
 
-def build(scene_path, out_dir, report_dir=None, quick=False, preview=True, png=False, check=False):
+def build(scene_path, out_dir, report_dir=None, quick=False, preview=True, png=False, check=False, annotate_=True):
     """geometry + renders (Blender), then annotation (overlay) for every view; returns the figure body.
-    png=True also rasterises the preview PDF (300 dpi) for Word / slides users."""
-    return build_from(load(scene_path), os.path.dirname(os.path.abspath(scene_path)), out_dir, report_dir, quick, preview, png, check)
+    png=True also rasterises the preview PDF (300 dpi) for Word / slides users; annotate_=False = plain renders only."""
+    return build_from(load(scene_path), os.path.dirname(os.path.abspath(scene_path)), out_dir, report_dir, quick, preview, png, check, annotate_)
 
 
 def to_png(pdf, dpi=300):
@@ -181,14 +181,44 @@ def build_all(target, out_root, report_dir=None, quick=False, check=False):
     return rows
 
 
-def build_from(sc, base, out_dir, report_dir, quick=False, preview=True, png=False, check=False):
-    """build() for an already-loaded scene dict (paths relative to `base`)."""
+def plain(sc, out_dir, rep):
+    """flatten every view's render to <rep>/images/steelfig/<view>.jpg and a one-page preview without any
+    annotation: the geometry checkpoint the person looks at before labels are added."""
+    sys.path.insert(0, ROOT)
+    from steelfig import overlay as O
+    img_dir = sc.get("figure", {}).get("image_dir", "images/steelfig"); paths = []
+    for v in sc.get("view", []):
+        vn = v["name"]; jp = os.path.join(out_dir, vn + ".json")
+        if not os.path.exists(os.path.join(out_dir, vn + ".png")): continue
+        O.flatten(os.path.join(out_dir, vn + ".png"), os.path.join(rep, img_dir, vn + ".jpg")); paths.append(os.path.join(rep, img_dir, vn + ".jpg"))
+    name = sc.get("figure", {}).get("name") or "figure"
+    parts = []
+    for v in sc.get("view", []):
+        if not os.path.exists(os.path.join(out_dir, v["name"] + ".png")): continue
+        parts.append("\\includegraphics[width=%.1fcm]{%s}\\par{\\footnotesize view %s (no annotation)}\\par\\vspace{3mm}"
+                     % (min(v.get("width_cm", 14), 16.0), os.path.join(img_dir, v["name"] + ".jpg"), v["name"]))
+    body = "\n".join(parts)
+    try:
+        pdf = O.preview(body, os.path.join(rep, "preview"), name + "_plain", cwd=rep); print("plain preview", pdf)
+    except Exception as e:
+        print("plain preview not built (%s); the JPEGs are:" % e)
+    for p in paths: print("plain", p)
+    return paths
+
+
+def build_from(sc, base, out_dir, report_dir, quick=False, preview=True, png=False, check=False, annotate_=True):
+    """build() for an already-loaded scene dict (paths relative to `base`). annotate_=False stops after the
+    renders and writes the plain views only (geometry checkpoint)."""
     os.makedirs(out_dir, exist_ok=True)
     for md in sc.get("model", []):
         if not os.path.isabs(md["path"]): md["path"] = os.path.join(base, md["path"])
     if sc.get("style"): os.environ["STEELFIG_STYLE"] = sc["style"] if os.path.isabs(sc["style"]) or "/" not in sc["style"] else os.path.join(base, sc["style"])
     spec = os.path.join(out_dir, "scene.json"); json.dump(sc, open(spec, "w"), indent=1)
     run_blender(os.path.join(ROOT, "blender", "build_scene.py"), out_dir, [spec] + (["quick"] if quick else []) + (["check=1"] if check else []))
+    if not annotate_:
+        paths = plain(sc, out_dir, report_dir or out_dir)
+        if png: to_png(os.path.join(report_dir or out_dir, "preview", "prev_%s_plain.pdf" % (sc.get("figure", {}).get("name") or "figure")))
+        return paths
     body = annotate(sc, out_dir, report_dir or out_dir, preview or png)
     if png: to_png(os.path.join(report_dir or out_dir, "preview", "prev_%s.pdf" % (sc.get("figure", {}).get("name") or "figure")))
     return body
