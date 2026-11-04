@@ -23,8 +23,11 @@ and source (why this figure, which brief page / lecture / clause it illustrates)
 the structure with catalogue designations and spacings, which parts are assumptions, the explanation content to
 draw in full (dimensions with values, centrelines, buckled shapes, tributary areas, load arrows), each view
 (perspective or orthographic, what it crops to, size on the page), the balloon list with key texts, checks,
-outputs, and open questions numbered. Show it, wait for the person to confirm or correct, then build. This step is
-what makes the figure right; skip it only if the person asks you to.
+outputs, and open questions numbered. Size it to the request (`docs/figure-brief.md`: small = three lines for one
+member or one connection, medium = the template, large = template + numbered questions for a building or anything
+without a generator) and say which size you chose. Write `brief.toml` next to it (parts, dims, views,
+assumptions) so the scene can be checked against the brief by machine. Show the brief, wait for the person to
+confirm or correct, then build. This step is what makes the figure right; skip it only if the person asks you to.
 
 ## Step 2: build the scene
 
@@ -56,8 +59,9 @@ Treat every line of the build output as a task:
 - `REALISM …`: a rule of real construction is broken (AS 4100 edge distance / pitch, brace angle, spanner
   room); fix it.
 - `ERROR in [[table]] name = …`: a scene mistake, one line says what.
-Look at the preview PDF (`<rep>/preview/prev_<figure>.pdf`, rasterise with pdftoppm to inspect) and compare it
-line by line with the brief. Only then render without `--quick` and show the figure. Give the person the
+Run `steelfig brief-check brief.toml scene.toml <build log>`: every part in the brief must have a key line,
+every dimension must be drawn, every view must exist, the log must be silent. Then look at the preview PDF
+(`<rep>/preview/prev_<figure>.pdf`, rasterise with pdftoppm to inspect) and compare it with the brief. Only then render without `--quick` and show the figure. Give the person the
 rationale file's ASSUMPTION lines: they must appear in the brief, caption or key.
 
 ## Camera
@@ -72,6 +76,20 @@ LaTeX: `\input{figures/fig_<name>}` inside the report's own `figure` environment
 needs `tikz`, `arrows.meta`, `\definecolor{acc}{rgb}{0.62,0.16,0.10}` and the `\ball` macro (`PRE` in
 `steelfig/overlay.py`). Word or slides: `--png` writes `preview/prev_<name>.png`. Several figures of one report:
 a set file and `steelfig build-all set.toml <out_root> --report <rep>` so they share one style.
+
+## Learning from corrections
+
+When the person corrects anything (a placement, a label, a colour, a rule of construction), write it into
+`docs/feedback-log.md` (date, who, their words, where it went) and then into the rule it belongs to:
+`docs/figure-style.md`, `docs/pitfalls.md`, the style sheet, or `docs/details/<connection>.md` for how parts are
+built. A rule confirmed against a document replaces its ASSUMPTION in `blender/rationale.py` SRC and in the detail
+file. Commit these in the repo (`git -C <repo> …`), never inside the person's project folder.
+
+## Keeping it working
+
+`steelfig regress` builds every example scene and must stay silent; run it after changing the tool, a style or an
+example. `skills/blender-figures/evals/` holds five end-to-end cases (prompt + graders) for `claude plugin eval`
+when the person wants a billed run of the whole skill.
 
 ## Extending
 

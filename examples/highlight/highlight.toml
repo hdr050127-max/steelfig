@@ -60,13 +60,9 @@ draw = [["fill", ["strip"], "acc, opacity=0.18"], ["line", ["strip#0", "strip#1"
   [[view.label]]
   anchor = "m.m101_11.315"
   text = "360UB50.7 mid rafter A--B of the middle frame"
-  dx = -0.5
-  dy = -1.6
   [[view.label]]
   anchor = "m.m1_11.315"
   text = "610UB113 column"
-  dx = -1.2
-  dy = -0.6
 
 [figure]
 name = "highlight"

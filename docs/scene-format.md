@@ -51,8 +51,12 @@ per_frame = false
 [[sheeting]]  name  line  x0  x1  y0  y1  lift  rib  pitch  material
 [[connection]]  type = "knee"   name = "k"  line = "roof"  x = 0.0  column = "col"  rafter = "raf"  [diagonal = true]
 [[connection]]  type = "splice" name = "s"  line = "roof"  x = 6.278  a = "haunch"  b = "rafter"
-[[connection]]  type = "cap"    name = "c"  line = "roof"  x = 21.993  column = "colB"  rafter = "haunchB"
-[[connection]]  type = "base"   name = "b"  x = 0.0  column = "col"  [z0 = 0.0  plate_t  grout  bolt = "M24"]
+[[connection]]  type = "cap"    name = "c"  line = "roof"  x = 21.993  column = "colB"  rafter = "haunchB"  [y = 0.0]
+[[connection]]  type = "base"   name = "b"  x = 0.0  column = "col"  [y = 0.0  z0 = 0.0  plate_t  grout  bolt = "M24"]
+[[connection]]  type = "wsp"    name = "w"  y = 0.0  primary = "pri"  secondary = "sec"
+      # web side plate: a PFC running along y (align = "top", member line on the web back face, flip for the toes) into
+      # the web of a primary along x at y; top flush, flanges and top of web coped. Anchors: w.fin w.bolt w.cope w.web.
+      # extra keys: bolt rows pitch fin_t fin_h fin_w bolt_off gap cope_len cope_d weld
       # generated from the member sections: plates, bolt rows, stiffeners, grips; the named members are trimmed
       # to the connection faces automatically (declare them to the column axis / splice point). Anchors:
       # k.ep k.bolt k.bolt2 k.stiff k.face | s.ep s.bolt s.bolt2 s.face | c.capp c.bolt c.ws c.col | b.bp b.ab b.ab2 b.grout b.foot b.col
@@ -63,7 +67,11 @@ per_frame = false
                section = "75x75x6 EA"  both_sides = true  cleat = true     # against the purlin web, cut under the top flange
 check = true           # top level: report solids passing through each other (> check_min_cm3, default 5 cm3)
 [[model]]  path = "model.arc"  sections = { "PROP name or member id" = "designation" }  default  accent = [ids]
-           skip = [ids]  xmax  frames = [ys]  top_lift
+           skip = [ids]  xmax  frames = [ys]  top_lift  connections = true
+      # connections = true (default): at every node a column top meeting one inclined member gets a knee, a
+      # column top under a continuous rafter a cap plate, two inclined members of different sections a splice;
+      # the members are trimmed to those faces (the analysis lines would otherwise pass through each other).
+      # Anchors: knee<node>.ep / .bolt / .stiff, cap<node>.capp / .bolt / .ws, splice<node>.ep / .bolt
 [[section_cut]]  point  normal  plane = "xz"  pitch = 0.012      # cuts everything on the +normal side, hatches the faces
 [[explode]]  objects = ["ep", "kb"]  vector = [0, -0.3, 0]      # pull parts away (names or name prefixes)
 

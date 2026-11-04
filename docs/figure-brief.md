@@ -26,9 +26,33 @@ Output       fragment name, image folder, preview, PNG for Word?
 Open points  what the person must decide before building (numbered questions)
 ```
 
+## Three sizes of brief
+
+Pick the size from the request, and say which you picked:
+- **Small** (one member or one connection, one view, no model import: "a pinned base for a 610UB113"): three
+  lines in the reply, confirmed with a word: the subject and sections, what is dimensioned / labelled, the view.
+  Assumptions still listed.
+- **Medium** (a bay, a frame, two or three views, a model import): the full template below, about ten lines.
+- **Large** (a building, several connections, more than three views, or anything the tool has no generator for):
+  the full template plus numbered open questions, and a note of which parts will be schematic. Do not start until
+  the open questions are answered.
+
 Keep it short: a brief for a simple figure is ten lines. Write values, not adjectives ("purlins Z25019 at 1200
 from the eave", not "purlins at reasonable spacing"). Where the request leaves a choice that changes the
 drawing (which bay, which side, real sections or sketch), ask under Open points rather than guessing.
+
+## Machine-readable copy
+
+Next to the Markdown brief write `brief.toml` with the lists a machine can check against the scene and the
+build (`steelfig brief-check brief.toml scene.toml [build log]`):
+
+```toml
+figure = "colbase"
+parts = ["610UB113 column", "base plate", "holding-down bolts", "grout", "footing"]   # each must be a key line
+dims = ["487", "120"]                                   # each must be a dimension text in the scene
+views = ["base3d", "baseplan"]                          # each must be a [[view]]
+assumptions = ["bolt size", "footing size"]             # reported to the person, kept in the caption / key
+```
 
 After confirmation: write the scene file straight from the brief (one line of the brief → one table of the
 scene), build with `--quick --check`, compare the preview with the brief line by line, then render full size.

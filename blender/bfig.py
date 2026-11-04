@@ -374,6 +374,24 @@ def boolean_cut(target, cutters, op="DIFFERENCE"):
         bpy.ops.object.modifier_apply(modifier=m.name)
 
 
+def split_long_faces(step=0.4, longer_than=1.0):
+    """cut long members across their length into coplanar pieces. Freestyle loses occluders that are very long and
+    thin, and the hidden edges behind them then show through; the extra edges are flat, so they draw no lines."""
+    for ob in all_meshes():
+        pts = [ob.matrix_world @ Vector(c) for c in ob.bound_box]
+        lo = [min(p[k] for p in pts) for k in range(3)]; hi = [max(p[k] for p in pts) for k in range(3)]
+        k = max(range(3), key=lambda q: hi[q] - lo[q])
+        if hi[k] - lo[k] <= longer_than: continue
+        no = Vector((0, 0, 0)); no[k] = 1.0
+        bm = bmesh.new(); bm.from_mesh(ob.data)
+        c = lo[k] + step
+        while c < hi[k]:
+            co = Vector((0, 0, 0)); co[k] = c
+            bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], plane_co=ob.matrix_world.inverted() @ co, plane_no=no)
+            c += step
+        bm.to_mesh(ob.data); bm.free()
+
+
 def delete(objs):
     for o in objs: bpy.data.objects.remove(o, do_unlink=True)
 
@@ -630,8 +648,9 @@ def wave(p, q, amp, side, n=20):
 
 
 def _id_colour(i):
-    """index 1.. -> distinct sRGB colour (steps of 51 on each channel: 125 ids), returned as (sRGB tuple, linear rgba)."""
-    i = int(i); r, g, b = (i % 5) * 51, ((i // 5) % 5) * 51, ((i // 25) % 5) * 51
+    """index 1.. -> distinct sRGB colour (1575 ids), returned as (sRGB tuple, linear rgba). Never black, which is what a
+    transparent background reads as; blue steps of 34 because readers compare colours by luminance (weight 0.114)."""
+    i = int(i) - 1; r, g, b = (i % 15 + 1) * 17, ((i // 15) % 15 + 1) * 17, ((i // 225) % 7 + 1) * 34
     lin = lambda c: (c / 255) / 12.92 if c / 255 <= 0.04045 else (((c / 255) + 0.055) / 1.055) ** 2.4
     return (r, g, b), (lin(r), lin(g), lin(b), 1.0)
 

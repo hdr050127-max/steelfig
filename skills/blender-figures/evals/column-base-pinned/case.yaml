@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: column-base-pinned
+expected_outcome: |
+  Brief; scene using the base connection generator; 3D view (and optionally a plan) with the bolt spacing dimensions checked against the model; balloons for column, base plate, bolts, grout, footing.

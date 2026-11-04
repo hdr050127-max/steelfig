@@ -115,15 +115,17 @@ def splice(name, line, x, a, a_sec, b, b_sec, M, ep_t=None, ep_ext=0.05, bolt=No
 
 
 # ---------------------------------------------------------------- cap: rafter continuous over a column, cap plate
-def cap(name, line, x, col, col_sec, raf_sec, M, cap_t=None, bolt=None, stiff_t=None):
+def cap(name, line, x, col, col_sec, raf_sec, M, cap_t=None, bolt=None, stiff_t=None, y=0.0):
     """pinned cap: the rafter (continuous) sits on a cap plate on top of the column at x; bolts just outside
-    the column walls (SHS) or flanges (UC); rafter web stiffeners over the column walls."""
+    the column walls (SHS) or flanges (UC); rafter web stiffeners over the column walls. y: position of the
+    rafter and column along the building (the line itself is in y = 0)."""
     C, R = _sec(col_sec), _sec(raf_sec); n = line.normal(x)
     dR, tfR, twR, bfR = R["d"], R["tf"], R["tw"], R["b"]
     g = _fill(dict(cap_t=cap_t, bolt=bolt, stiff_t=stiff_t), dR); cap_t, bolt, stiff_t = g["cap_t"], g["bolt"], g["stiff_t"]
     cw = C["b"] if C["row"]["type"] in ("SHS", "RHS", "CHS") else C["d"]        # column size along x
     tt = line.tangent(x)
-    under = line.at(x) - n * dR                                                  # underside of the rafter over the column axis
+    off = Y * y
+    under = line.at(x) + off - n * dR                                            # underside of the rafter over the column axis
     cuts = {col: {"cut1": (under - n * cap_t, n)}}                              # column top cut parallel to the roof
     anchors = {}
     RA.note(name, "cap plate %.0f mm on the roof slope, column cut parallel to the roof, %s bolts 45 mm outside the column walls, web stiffeners over the walls" % (cap_t * 1000, bolt),
@@ -139,32 +141,80 @@ def cap(name, line, x, col, col_sec, raf_sec, M, cap_t=None, bolt=None, stiff_t=
                 B.plate("%s_ws%+d%+d" % (name, sx, sy), under + tt * sx * (cw / 2 - 0.005) + Vector((0, sy * (twR / 2 + (bfR / 2 - twR / 2) / 2), 0)) + n * dR / 2, n, Y,
                         (dR - 2 * tfR, bfR / 2 - twR / 2 - 0.004, stiff_t), M["light"])
         anchors.update(capp=tuple(under - tt * (cw / 2 + 0.08) + Vector((0, -bfR / 2 - 0.02, 0)) - n * cap_t / 2), bolt=tuple(under + tt * (cw / 2 + 0.045) + Vector((0, -0.06, 0)) - n * (cap_t + 0.02)),
-                       ws=tuple(under - tt * (cw / 2 - 0.005) + Vector((0, -bfR / 2 + 0.02, 0)) + n * (dR / 2 - 0.1)), col=(x, -C["b"] / 2, under.z - 0.6))
+                       ws=tuple(under - tt * (cw / 2 - 0.005) + Vector((0, -bfR / 2 + 0.02, 0)) + n * (dR / 2 - 0.1)), col=(x, y - C["b"] / 2, under.z - 0.6))
     return dict(cuts=cuts, build=build, anchors=anchors)
 
 
 # ---------------------------------------------------------------- base: pinned base plate with four holding-down bolts
-def base(name, x, col, col_sec, M, z0=0.0, plate_t=None, grout=0.040, bolt=None, footing=(1.3, 0.9, 0.6), bolts_in=0.060):
-    """base plate on grout on a concrete footing; four anchor bolts 60 mm inside the flange faces (pinned)."""
+def base(name, x, col, col_sec, M, z0=0.0, plate_t=None, grout=0.040, bolt=None, footing=(1.3, 0.9, 0.6), bolts_in=0.060, y=0.0):
+    """base plate on grout on a concrete footing; four anchor bolts 60 mm inside the flange faces of an I section,
+    45 mm outside the walls of a tube (a bolt cannot be inside a tube); pinned. y: position along the building."""
     C = _sec(col_sec); dC, bfC = C["d"], C["b"]
     g = defaults(dC); plate_t = plate_t or g["plate_t"]; bolt = bolt or g["hd_bolt"]
-    cuts = {col: {"cut0": (Vector((x, 0, z0 + grout + plate_t)), Z)}}
+    tube = C["row"]["type"] in ("SHS", "RHS", "CHS")
+    bx = dC / 2 + 0.045 if tube else dC / 2 - bolts_in                           # bolts from the column axis along x
+    px = 2 * bx + 0.08 if tube else dC + 0.14                                    # base plate along x
+    df = SEC_DB.bolt(bolt)["d"]
+    cuts = {col: {"cut0": (Vector((x, y, z0 + grout + plate_t)), Z)}}
     anchors = {}
-    RA.note(name, "base plate %.0f mm on %.0f mm grout, four %s holding-down bolts %.0f mm inside the flange faces" % (plate_t * 1000, grout * 1000, bolt, bolts_in * 1000),
-           "pinned base: bolts inside the flanges give little moment capacity; grout takes the levelling tolerance", "ttw")
+    RA.note(name, "base plate %.0f mm on %.0f mm grout, four %s holding-down bolts %s" % (plate_t * 1000, grout * 1000, bolt, "45 mm outside the tube walls" if tube else "%.0f mm inside the flange faces" % (bolts_in * 1000)),
+           "pinned base: bolts close to the column axis give little moment capacity; a bolt cannot be inside a tube; grout takes the levelling tolerance", "ttw")
+    RA.check(px / 2 - bx >= 1.5 * df, name, "holding-down bolt %.0f mm from the base plate end" % ((px / 2 - bx) * 1000), "edge")
 
     def build():
-        B.plate(name + "_foot", Vector((x, 0, z0 - footing[2] / 2 - 0.0)), X, Y, footing, M["conc"])
-        objs, top = B_base(name, Vector((x, 0, z0)), (dC + 0.14, bfC + 0.10), plate_t, M, grout, bolts=[(sx * (dC / 2 - bolts_in), sy * 0.06) for sx in (-1, 1) for sy in (-1, 1)],
-                           bolt_dia=SEC_DB.bolt(bolt)["d"])
-        anchors.update(bp=(x + dC / 2 + 0.05, -bfC / 2 - 0.05, z0 + grout + plate_t / 2), ab=(x + dC / 2 - bolts_in, -0.06, top.z + 0.03), ab2=(x - dC / 2 + bolts_in, -0.06, top.z + 0.03),
-                       grout=(x + dC / 2 + 0.07, -bfC / 2 - 0.05, z0 + grout / 2), foot=(x + 0.25, -footing[1] / 2, z0 - 0.25), col=(x + dC / 2, -bfC / 2 + 0.02, z0 + 1.1))
+        B.plate(name + "_foot", Vector((x, y, z0 - footing[2] / 2 - 0.0)), X, Y, footing, M["conc"])
+        objs, top = B_base(name, Vector((x, y, z0)), (px, bfC + 0.10), plate_t, M, grout, bolts=[(sx * bx, sy * 0.06) for sx in (-1, 1) for sy in (-1, 1)],
+                           bolt_dia=df)
+        anchors.update(bp=(x + px / 2 - 0.02, y - bfC / 2 - 0.05, z0 + grout + plate_t / 2), ab=(x + bx, y - 0.06, top.z + 0.03), ab2=(x - bx, y - 0.06, top.z + 0.03),
+                       grout=(x + px / 2, y - bfC / 2 - 0.05, z0 + grout / 2), foot=(x + 0.25, y - footing[1] / 2, z0 - 0.25), col=(x + dC / 2, y - bfC / 2 + 0.02, z0 + 1.1))
     return dict(cuts=cuts, build=build, anchors=anchors)
 
 
 def B_base(name, base_pt, size, t, M, grout, bolts, bolt_dia):
     import assembly as A
     return A.base_plate(name + "_bp", base_pt, size, t, M["steel"], grout, M["grout"], bolts, bolt_dia, M["dark"])
+
+
+# ---------------------------------------------------------------- wsp: secondary beam into a primary web, web side plate
+def wsp(name, x, y, side, end, toes, sec, sec_sec, pri_sec, top, members, M, bolt="M20", rows=3, pitch=0.060, fin_t=0.010, fin_h=0.180, fin_w=0.130,
+        bolt_off=0.090, gap=0.010, cope_len=0.110, cope_d=0.035, weld=0.006):
+    """simple shear connection, secondary top flush with the primary top: a fin plate welded to the primary web
+    (the primary runs along x with its web at y), a column of bolts through the fin and the secondary web, the
+    secondary flanges and the top of its web coped clear of the primary flange. The secondary runs along y from
+    the primary towards `side` (+1 / -1), with its web back face on the member line at x and its toes towards
+    `toes` in x; the fin is on the back of the web, away from the toes."""
+    P, S = _sec(pri_sec), _sec(sec_sec); twP, tfP = P["tw"], P["tf"]; r1 = float(P["row"]["r1"]) / 1000
+    d, bf, tf, tw = S["d"], S["b"], S["tf"], S["tw"]; df = SEC_DB.bolt(bolt)["d"]
+    face = y + side * twP / 2                                                    # primary web face
+    zc = top - d / 2; zr = [zc + pitch * (k - (rows - 1) / 2) for k in range(rows)]; yb = face + side * bolt_off
+    cuts = {sec: {end: (Vector((x, face + side * gap, top)), Y)}}
+    anchors = {}
+    RA.note(name, "web side plate %.0f x %.0f x %.0f mm welded to the primary web, %d %s 8.8/S at %.0f mm pitch, secondary stops %.0f mm off the primary web" % (
+        fin_h * 1000, fin_w * 1000, fin_t * 1000, rows, bolt, pitch * 1000, gap * 1000), "a simple shear connection: bolts in one line near mid-depth of the secondary web, the fin carries the reaction to the primary web", "assume")
+    RA.note(name, "secondary top flush with the primary top; flanges coped back %.0f mm from the primary web centre, top of its web coped %.0f mm" % (cope_len * 1000, cope_d * 1000),
+           "the secondary must clear the primary flange (half width %.0f mm) and root radius, and any web stiffeners" % (P["b"] / 2 * 1000), "assume")
+    RA.check(pitch >= 2.5 * df, name, "bolt pitch %.0f mm" % (pitch * 1000), "pitch")
+    RA.check(fin_h / 2 - pitch * (rows - 1) / 2 >= 1.5 * df, name, "top bolt %.0f mm from the fin plate edge" % ((fin_h / 2 - pitch * (rows - 1) / 2) * 1000), "edge")
+    RA.check(fin_w - bolt_off >= 1.5 * df, name, "bolt line %.0f mm from the fin plate end" % ((fin_w - bolt_off) * 1000), "edge")
+    RA.check(zr[-1] <= top - cope_d - 1.25 * df, name, "top bolt %.0f mm below the web cope" % ((top - cope_d - zr[-1]) * 1000), "edge")
+    RA.check(zc + fin_h / 2 <= top - tfP - r1, name, "fin plate top %.0f mm below the primary top: must clear the primary flange root" % ((top - zc - fin_h / 2) * 1000), "assume")
+    RA.check(cope_d >= tfP + r1, name, "web cope %.0f mm deep: must clear the primary flange root" % (cope_d * 1000), "assume")
+    RA.check(cope_len >= P["b"] / 2, name, "flange cope %.0f mm: must clear the primary flange tip" % (cope_len * 1000), "assume")
+
+    def build():
+        ob = members[sec]; xm = x + toes * bf / 2; ym = y + side * cope_len / 2
+        for k, (zt, zb) in enumerate(((top + 0.02, top - cope_d), (top - d + tf, top - d - 0.02))):
+            cut = B.plate("%s_cope%d" % (name, k), Vector((xm, ym, (zt + zb) / 2)), X, Y, (bf + 0.04, cope_len, zt - zb), M["steel"])
+            B.boolean_cut(ob, [cut]); B.delete([cut])
+        B.plate(name + "_fin", Vector((x - toes * fin_t / 2, face + side * fin_w / 2, zc)), X, Y, (fin_t, fin_w, fin_h), M["steel"])
+        for k, z in enumerate(zr):
+            B.bolt("%s_b%d" % (name, k), Vector((x + toes * (tw - fin_t) / 2, yb, z)), X, df, fin_t + tw, M["dark"])
+        for s_ in (0, 1):
+            xw = x - toes * fin_t * s_
+            B.weld_line("%s_w%d" % (name, s_), Vector((xw, face, zc - fin_h / 2)), Vector((xw, face, zc + fin_h / 2)), weld, (toes if s_ == 0 else -toes) * X, side * Y, M.get("weld", M["steel"]))
+        anchors.update(fin=(x - toes * fin_t, face + side * fin_w * 0.35, zc - fin_h * 0.25), bolt=(x - toes * (fin_t + 0.012), yb, zr[0]), cope=(x + toes * bf * 0.6, y + side * cope_len, top),
+                       web=(x, y + side * (cope_len + 0.15), zc))
+    return dict(cuts=cuts, build=build, anchors=anchors)
 
 
 # ---------------------------------------------------------------- purlin cleats on a rafter top flange
@@ -180,4 +230,4 @@ def purlin_cleats(name, purlin_pts, purlin_section, line, M, t=0.008, h=None, bo
     return out
 
 
-TYPES = dict(knee=knee, splice=splice, cap=cap, base=base)
+TYPES = dict(knee=knee, splice=splice, cap=cap, base=base, wsp=wsp)

@@ -10,6 +10,8 @@
   steelfig render <fig.py> <out_dir> [quick] [cam=...]                               run a Python figure script in Blender
   steelfig sections <query>                                                          search the catalogue (e.g. "360UB", "SHS", "x8 EA")
   steelfig model <file.arc|nodes.csv>                                                summarise an analysis model
+  steelfig brief-check <brief.toml> <scene.toml> [build.log]                        parts / dims / views of the brief vs the scene
+  steelfig regress [out_root]                                                        build every example silently (tools/regress.py)
   steelfig doctor                                                                    check Blender, Pillow, pdflatex"""
 import os, sys, shutil
 
@@ -64,6 +66,13 @@ def main(argv=None):
     if cmd == "model":
         from steelfig import readers
         print(readers.read(a[0]).summary()); return 0
+    if cmd == "brief-check":
+        import runpy
+        mod = runpy.run_path(os.path.join(ROOT, "tools", "brief_check.py"), run_name="brief_check")
+        return mod["main"](*a[:3])
+    if cmd == "regress":
+        import subprocess
+        return subprocess.call([sys.executable, os.path.join(ROOT, "tools", "regress.py"), *a[:1]])
     if cmd == "doctor":
         from steelfig import scene, overlay
         try: print("Blender :", scene.blender())

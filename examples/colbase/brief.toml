@@ -1,0 +1,5 @@
+figure = "colbase"
+parts = ["610UB113", "base plate", "holding-down bolts", "grout", "footing"]
+dims = ["487", "120"]
+views = ["base3d", "baseplan"]
+assumptions = ["bolt size M24 vs M30 (generator default)", "footing size schematic"]

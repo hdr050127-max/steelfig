@@ -1,0 +1,71 @@
+title = "West column base: pinned (Option 1)"
+check = true
+
+[[member]]
+name = "col"
+section = "610UB113"
+from = [0, 0, 0]
+to = [0, 0, 1.6]
+up = [1, 0, 0]
+
+[[connection]]
+type = "base"
+name = "b"
+x = 0.0
+column = "col"
+
+[anchors]
+pA = [-0.2435, -0.06, 0.072]
+pB = [0.2435, -0.06, 0.072]
+pC = [0.2435, 0.06, 0.072]
+cA = [-0.2435, -0.06, 0.09]
+cB = [0.2435, -0.06, 0.09]
+cC = [0.2435, 0.06, 0.09]
+
+[[dim]]
+name = "sx"
+a = [-0.2435, -0.06, 0.072]
+b = [0.2435, -0.06, 0.072]
+off = [0, -0.5, 0]
+
+[[dim]]
+name = "sy"
+a = [0.2435, -0.06, 0.072]
+b = [0.2435, 0.06, 0.072]
+off = [0.55, 0, 0]
+
+[[view]]
+name = "base3d"
+camera = "auto"
+auto = { focus = ["b_bp"], dir = [0.8, -1.0, 0.55], lens = 45, fill = 0.78 }
+width_cm = 9.5
+draw = [["dim3", "sx", "487", "below"], ["dim3", "sy", "120", "below"]]
+caption = "(a) base of the west column"
+  [[view.label]]
+  anchor = "b.col"
+  text = "610UB113 west column"
+  [[view.label]]
+  anchor = "b.bp"
+  text = "base plate"
+  [[view.label]]
+  anchor = "b.ab"
+  text = "four holding-down bolts inside the flanges"
+  [[view.label]]
+  anchor = "b.grout"
+  text = "40 mm grout"
+  [[view.label]]
+  anchor = "b.foot"
+  text = "concrete footing (shown schematically)"
+
+[[view]]
+name = "baseplan"
+ortho = { look = "-z", scale = 1.1, at = [0, 0, 1.0] }
+crop = [[-0.5, -0.4, 0.5], [0.5, 0.4, 0.5]]
+width_cm = 5.6
+caption = "(b) plan of the base plate"
+draw = [["dim", "cA", "cB", "487", 0.6, "below"], ["dim", "cB", "cC", "120", 0.6, "right"]]
+
+[figure]
+name = "colbase"
+layout = "row"
+key_cols = 2

@@ -117,6 +117,13 @@ Every geometric assumption a figure shows (purlin on the top flange, bolts eithe
 its source in the caption or key. The dimension texts in `draw` are checked against the model and a mismatch is
 printed as a warning. The figures explain; they do not replace hand drawings a course asks for.
 
+## Keeping it honest
+
+`docs/details/` states how each connection is built, with numbers, sources and what is still an assumption; the
+rationale a build writes cites these files. `docs/feedback-log.md` records every correction and where it went.
+`steelfig regress` rebuilds all examples and must stay silent; `skills/blender-figures/evals/` holds end-to-end
+cases for `claude plugin eval`. `steelfig brief-check` compares a figure brief with the scene and the build log.
+
 ## Layout
 
 ```
@@ -124,9 +131,10 @@ steelfig/        pure Python: sections.py (catalogue), readers.py (Microstran / 
                  scene.py (TOML -> build), style.py + styles/, cli.py; data/*.csv (section tables, see data/README.md)
 blender/         runs inside Blender: bfig.py (modelling, camera, render), assembly.py (lines, patterns,
                  connections, model import), build_scene.py
-examples/        knee (TOML), frame_from_model (TOML + .arc), kjoint (Python)
-docs/            scene-format.md, python-api.md, figure-style.md, pitfalls.md
-tools/           extract_sections.py (regenerate the CSV tables from the catalogue workbooks)
+examples/        knee, connections, highlight, frame_from_model (+ .arc), colbase, roofbracing (TOML); kjoint (Python)
+docs/            scene-format.md, python-api.md, figure-style.md, figure-brief.md, pitfalls.md, feedback-log.md, details/
+tools/           extract_sections.py, regress.py, brief_check.py
+skills/          blender-figures: the Claude Code skill and its eval cases
 tests/           python3 -m unittest discover -s tests
 ```
 

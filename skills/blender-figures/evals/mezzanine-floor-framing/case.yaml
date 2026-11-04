@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: mezzanine-floor-framing
+expected_outcome: |
+  Brief with the framing hierarchy; one figure (perspective, maybe plus plan) with primary beams, PFC secondaries at 2 m, SHS columns; balloons name each member type; spacing dimensioned; assumptions on connections stated.

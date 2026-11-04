@@ -240,14 +240,62 @@ def cleat(name, pt, size=(0.008, 0.14, 0.14), material=None):
 
 
 # ---------------------------------------------------------------- from an analysis model
-def build_model(model, mapping, materials, default=None, web=(0, 0, 1), accent=(), skip=(), xmax=None, y=0.0, top_lift=None):
+def model_connections(model, secs, M, top_lift=None):
+    """find the standard connections at the nodes of a frame model and return [(kind, node, generator)]:
+    knee   = a vertical member ends at the node from below and one inclined member starts/ends there
+    cap    = a vertical member ends at the node and the inclined member runs through (continuous rafter)
+    splice = two inclined members of different sections meet at a node with no vertical member
+    secs: {member id: designation}. The generators work in the y = 0 plane; copies are shifted by the caller."""
+    import connections as CN
+    by_node = {}
+    for m in model.members:
+        if m["id"] not in secs: continue
+        for end, nid in (("a", m["a"]), ("b", m["b"])): by_node.setdefault(nid, []).append((m, end))
+    out = []
+    for nid, inc in by_node.items():
+        P = Vector(model.nodes[nid])
+        vert = [(m, e) for m, e in inc if abs(Vector(model.member_line(m)[1]).x - Vector(model.member_line(m)[0]).x) < 1e-6]
+        incl = [(m, e) for m, e in inc if (m, e) not in vert]
+        if len(vert) == 1 and incl:
+            m, e = vert[0]; a, b = (Vector(q) for q in model.member_line(m))
+            top = max(a.z, b.z)
+            if abs(top - P.z) > 1e-6: continue                     # column passes through: not its top
+            col_sec = secs[m["id"]]
+            if len(incl) == 1:                                    # knee
+                r, re_ = incl[0]; ra, rb = (Vector(q) for q in model.member_line(r)); other = rb if re_ == "a" else ra
+                side = 1 if other.x > P.x else -1
+                line = Line([(min(ra.x, rb.x), ra.z if ra.x < rb.x else rb.z), (max(ra.x, rb.x), rb.z if ra.x < rb.x else ra.z)],
+                            top_lift if top_lift is not None else SEC_DB.profile(secs[r["id"]])["d"] / 2)
+                out.append(("knee", nid, CN.knee("knee%d" % nid, line, P.x, "m%d" % m["id"], col_sec, "m%d" % r["id"], secs[r["id"]], M, side=side)))
+            elif len(incl) == 2:                                  # cap: rafter continuous over the column top
+                r1, r2 = incl[0][0], incl[1][0]
+                ra, rb = (Vector(q) for q in model.member_line(r1)); rc, rd = (Vector(q) for q in model.member_line(r2))
+                pts = sorted({(round(q.x, 6), q.z) for q in (ra, rb, rc, rd)})
+                line = Line([(x, z) for x, z in pts], top_lift if top_lift is not None else SEC_DB.profile(secs[r1["id"]])["d"] / 2)
+                raf_sec = secs[r1["id"]] if SEC_DB.profile(secs[r1["id"]])["d"] >= SEC_DB.profile(secs[r2["id"]])["d"] else secs[r2["id"]]
+                out.append(("cap", nid, CN.cap("cap%d" % nid, line, P.x, "m%d" % m["id"], col_sec, raf_sec, M)))
+        elif not vert and len(incl) == 2:
+            r1, r2 = incl[0][0], incl[1][0]
+            if secs[r1["id"]] == secs[r2["id"]]: continue           # same section: continuous, no splice drawn
+            ra, rb = (Vector(q) for q in model.member_line(r1)); rc, rd = (Vector(q) for q in model.member_line(r2))
+            pts = sorted({(round(q.x, 6), q.z) for q in (ra, rb, rc, rd)})
+            line = Line([(x, z) for x, z in pts], top_lift if top_lift is not None else max(SEC_DB.profile(secs[r1["id"]])["d"], SEC_DB.profile(secs[r2["id"]])["d"]) / 2)
+            left, right = (r1, r2) if min(ra.x, rb.x) < min(rc.x, rd.x) else (r2, r1)
+            out.append(("splice", nid, CN.splice("splice%d" % nid, line, P.x, "m%d" % left["id"], secs[left["id"]], "m%d" % right["id"], secs[right["id"]], M)))
+    return out
+
+
+def build_model(model, mapping, materials, default=None, web=(0, 0, 1), accent=(), skip=(), xmax=None, y=0.0, top_lift=None, connections=False):
     """draw every member of a readers.Model. Section: mapping (member id / property name -> designation), else the
     property name itself when it is a catalogue designation, else `default`. Vertical members get their web along
     +x, others along `web`. accent: member ids or property names drawn in the accent material. top_lift: shift
     every non-vertical member along its normal so that its top face sits top_lift above the analysis axis (stepped
     rafters with flush tops, e.g. half the haunch depth); None keeps the analysis axis as the centroid.
+    connections=True: generate knee / cap / splice connections at the nodes (model_connections) and trim the
+    members to them, so the frame is built as detailed, not as analysed.
     Returns {member id: object}; prints the members it could not place."""
-    out = {}; missing = []
+    import bpy
+    out = {}; missing = []; secs = {}
     for m in model.members:
         if m["id"] in skip or model.props.get(m["prop"]) in skip: continue
         sec = model.section_of(m, mapping)
@@ -255,19 +303,49 @@ def build_model(model, mapping, materials, default=None, web=(0, 0, 1), accent=(
             try: sec = SEC_DB.find(model.props.get(m["prop"], ""))["designation"]
             except KeyError: sec = default
         if sec is None: missing.append((m["id"], model.props.get(m["prop"]))); continue
+        secs[m["id"]] = sec
+    conns = model_connections(model, secs, materials, top_lift) if connections else []
+    cuts = {}
+    for kind, nid, c in conns:
+        for mname, cc in c["cuts"].items(): cuts.setdefault(mname, {}).update(cc)
+    for m in model.members:
+        if m["id"] not in secs: continue
+        sec = secs[m["id"]]
         a, b = (Vector(p) for p in model.member_line(m))
         if xmax is not None and min(a.x, b.x) > xmax: continue
         if xmax is not None and max(a.x, b.x) > xmax:
             if b.x > a.x: b = a + (b - a) * ((xmax - a.x) / (b.x - a.x))
             else: a = b + (a - b) * ((xmax - b.x) / (a.x - b.x))
-        a.y += y; b.y += y
         ex = (b - a).normalized()
         up = Vector((1, 0, 0)) if abs(ex.z) > 0.99 else Vector(web)
         if abs(up.dot(ex)) > 0.99: up = Vector((0, 1, 0))
-        mat = materials["accent"] if (m["id"] in accent or model.props.get(m["prop"]) in accent) else materials["steel"]
+        mat = materials["accent"] if (m["id"] in accent or model.props.get(m["prop"]) in accent) else None
+        align = "centroid"
         if top_lift is not None and abs(ex.z) < 0.99:
             n = up - up.dot(ex) * ex; n.normalize(); d = SEC_DB.profile(sec)["d"]
             a = a + n * (top_lift - d / 2); b = b + n * (top_lift - d / 2)
-        out[m["id"]] = B.member("m%d_%g" % (m["id"], y), a, b, sec, mat, up=up)
+        cc = cuts.get("m%d" % m["id"], {})
+        sh = lambda pl: (pl[0] + Vector((0, y, 0)), pl[1]) if pl else None
+        c0, c1 = cc.get("cut0"), cc.get("cut1")
+        if c0 is not None or c1 is not None:
+            # the generator's cut planes assume the member runs a -> b in +x (rafters) or upwards (columns)
+            if abs(ex.z) > 0.99 and ex.z < 0: c0, c1 = c1, c0
+            if abs(ex.z) < 0.99 and ex.x < 0: c0, c1 = c1, c0
+        a.y += y; b.y += y
+        out[m["id"]] = B.member("m%d_%g" % (m["id"], y), a, b, sec, mat, up=up, cut0=sh(c0), cut1=sh(c1), align=align)
+    if conns:
+        before = set(o.name for o in bpy.context.scene.objects)
+        for kind, nid, c in conns: c["build"]()
+        if y:
+            for o in bpy.context.scene.objects:
+                if o.name not in before: o.location = o.location + Vector((0, y, 0))
+        # connection anchors for the first frame only (they would repeat per frame)
+        CONN_ANCHORS = {}
+        for kind, nid, c in conns:
+            for k, v in c["anchors"].items(): CONN_ANCHORS["%s%d.%s" % (kind, nid, k)] = tuple(Vector(v) + Vector((0, y, 0)))
+        out["_anchors"] = CONN_ANCHORS
+        print("model connections at y=%g: %s" % (y, ", ".join("%s@node%d" % (k, n) for k, n, _ in conns)))
     if missing: print("WARNING build_model: no section for members", missing, "- add them to `sections` or set `default`")
     return out
+
+

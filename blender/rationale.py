@@ -6,15 +6,16 @@ Realism checks call check() with a condition; failures are printed as REALISM li
 _notes = []
 _fails = []
 
+# every key also names the knowledge file that states the rule in full (docs/details/)
 SRC = {
     "edge": "AS 4100 Cl 9.6.2: minimum edge distance 1.5 d_f (sheared / hand-flame-cut edge), 1.25 d_f (rolled / machine-cut)",
     "pitch": "AS 4100 Cl 9.6.1: minimum bolt pitch 2.5 d_f",
     "hole": "AS 4100 Cl 14.3.5.2: hole 2 mm larger than the bolt up to M24, 3 mm above",
-    "purlin": "Stramit purlin & girt manual / Lysaght purlin manual: Z purlin lies with bottom flange downslope, top flange upslope; fly brace to the purlin web (ASSUMPTION for the exact bolt height: mid-web)",
-    "flybrace": "common Australian portal-frame practice (e.g. ASI 'Economical structural steelwork', purlin manuals): fly brace = angle from the rafter bottom flange to the purlin web, both sides, at 30-60 degrees",
-    "ttw": "TTW standard details ST-30xxx (course drawings): extended end plate knee, bolted end-plate splice, cap plate on SHS, pinned base plate",
-    "asi_ep": "ASI standardized structural connections (bolted moment end plate): bolt gauge about the web, rows above and below each flange, plate 20-32 mm",
-    "assume": "ASSUMPTION (common practice, no document checked)",
+    "purlin": "Stramit / Lysaght purlin manuals: Z purlin lies with bottom flange downslope, top flange upslope; fly brace to the purlin web (docs/details/fly_brace.md; ASSUMPTION for the exact bolt height: mid-web)",
+    "flybrace": "common Australian portal-frame practice (purlin manuals, draftsperson.net typical fly brace detail): angle from the rafter bottom flange to the purlin web, both sides, at 30-60 degrees (docs/details/fly_brace.md)",
+    "ttw": "TTW course standard details ST-30xxx: extended end plate knee, bolted end-plate splice, cap plate on SHS, pinned base plate (docs/details/knee.md, splice.md, cap.md, base.md)",
+    "asi_ep": "ASI Standardised Structural Connections (bolted moment end plate): bolt gauge about the web, rows above and below each flange, plate 20-32 mm (docs/details/knee.md)",
+    "assume": "ASSUMPTION (common practice, no document checked; see the To verify list in docs/details/)",
 }
 
 

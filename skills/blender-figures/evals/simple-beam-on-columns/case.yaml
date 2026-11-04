@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: simple-beam-on-columns
+expected_outcome: |
+  A brief, then a TOML scene with the beam, two columns and generated connections (cap or end plate type), built silently; the figure shows the beam, columns and connections with balloons and a key; assumptions (connection type, column height) stated.

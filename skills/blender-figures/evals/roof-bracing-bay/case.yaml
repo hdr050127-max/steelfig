@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: roof-bracing-bay
+expected_outcome: |
+  Brief stating the assumptions (CHS or rod, gusset plates schematic, level of the diagonals); scene with two frames, purlins, two diagonals that do not pass through each other, an eave strut; clash check silent; plan and perspective views.

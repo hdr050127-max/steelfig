@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: workshop-portal-frames
+expected_outcome: |
+  Brief covering the whole building and the knee close-up; overview with three bays, purlins, girts, fly braces and the braced bay; a knee close-up built with the knee connection generator and fly braces by rule; the rationale lines given to the user with assumptions marked.

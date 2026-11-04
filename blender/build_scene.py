@@ -70,8 +70,8 @@ conns = []
 for cn in sc.get("connection", []):
   with _at('[[connection]] type = "%s" name = "%s"' % (cn.get("type"), cn.get("name", cn.get("type")))):
     typ = cn["type"]; nm = cn.get("name", typ); L = lines[cn["line"]] if "line" in cn else None
-    kw = {k: (num(v) if isinstance(v, str) and k not in ("bolt",) and k.endswith(("_t", "_ext", "_in", "_off", "x", "z0")) else v) for k, v in cn.items()
-          if k not in ("type", "name", "line", "column", "rafter", "a", "b", "member")}
+    kw = {k: (num(v) if isinstance(v, str) and k not in ("bolt",) and k.endswith(("_t", "_ext", "_in", "_off", "x", "y", "z0")) else v) for k, v in cn.items()
+          if k not in ("type", "name", "line", "column", "rafter", "a", "b", "member", "primary", "secondary")}
     if typ == "knee":
         conns.append(CN.knee(nm, L, num(cn["x"]), cn["column"], msec[cn["column"]], cn["rafter"], msec[cn["rafter"]], M, **{k: v for k, v in kw.items() if k != "x"}))
     elif typ == "splice":
@@ -80,8 +80,17 @@ for cn in sc.get("connection", []):
         conns.append(CN.cap(nm, L, num(cn["x"]), cn["column"], msec[cn["column"]], msec[cn["rafter"]], M, **{k: v for k, v in kw.items() if k != "x"}))
     elif typ == "base":
         conns.append(CN.base(nm, num(cn["x"]), cn["column"], msec[cn["column"]], M, **{k: v for k, v in kw.items() if k != "x"}))
+    elif typ == "wsp":
+        ms = next(q for q in sc["member"] if q["name"] == cn["secondary"]); a, b = pt(ms["from"]), pt(ms["to"]); y0 = num(cn["y"])
+        if ms.get("align") != "top" or abs(a.x - b.x) > 1e-6: raise ValueError("the secondary must run along y with align = \"top\"")
+        near = "cut0" if abs(a.y - y0) <= abs(b.y - y0) else "cut1"
+        side = 1 if (b.y if near == "cut0" else a.y) > y0 else -1
+        toes = (1 if b.y > a.y else -1) * (-1 if ms.get("flip") else 1)            # the profile's +v is ex x ey = +x for a member running towards +y
+        conns.append(CN.wsp(nm, a.x, y0, side, near, toes, cn["secondary"], ms["section"], msec[cn["primary"]], a.z, members, M,
+                            **{k: v for k, v in kw.items() if k not in ("x", "y")}))
     else:
         raise ValueError("unknown connection type " + typ)
+conn_anchors = {}
 auto_cuts = {}
 for c in conns:
     for mname, cuts in c["cuts"].items(): auto_cuts.setdefault(mname, {}).update(cuts)
@@ -98,7 +107,6 @@ for mb in sc.get("member", []):
                       secondary_=mb.get("secondary", False))
         if not y:
             members[mb["name"]] = ob; e = _Ends(); e.a, e.b = a, b; setattr(mem_ns, mb["name"], e)
-conn_anchors = {}
 for c, cn in zip(conns, sc.get("connection", [])):
   with _at('[[connection]] name = "%s" (building its parts)' % cn.get("name", cn["type"])):
     c["build"]()
@@ -147,8 +155,9 @@ for md in sc.get("model", []):
     from steelfig import readers
     model = readers.read(md["path"])
     for y in md.get("frames", [0.0]):
-        A.build_model(model, md.get("sections", {}), M, default=md.get("default"), accent=md.get("accent", []) if y == md.get("frames", [0.0])[0] else [],
-                      skip=md.get("skip", []), xmax=md.get("xmax"), y=y, top_lift=md.get("top_lift"))
+        res = A.build_model(model, md.get("sections", {}), M, default=md.get("default"), accent=md.get("accent", []) if y == md.get("frames", [0.0])[0] else [],
+                            skip=md.get("skip", []), xmax=md.get("xmax"), y=y, top_lift=md.get("top_lift"), connections=md.get("connections", True))
+        if y == md.get("frames", [0.0])[0]: conn_anchors.update(res.get("_anchors", {}))
 for cut in sc.get("section_cut", []):
     H = B.hatch_mat("hatch", (0.78, 0.78, 0.78), (0.1, 0.1, 0.1), pitch=cut.get("pitch", 0.012), plane=cut.get("plane", "xz"))
     B.section_cut(B.all_meshes(), pt(cut["point"]), vec(cut["normal"]), hatch=H)
@@ -172,6 +181,7 @@ B.export_glb(os.path.join(out, "scene.glb"))
 if sc.get("check", False) or "check" in opt:
     B.check_clashes(min_cm3=float(sc.get("check_min_cm3", 5.0)))
 
+B.split_long_faces()
 for v in sc.get("view", []):
   with _at('[[view]] name = "%s"' % v.get("name", "?")):
     cam_list = None

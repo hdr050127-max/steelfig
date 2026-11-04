@@ -1,0 +1,132 @@
+title = "Roof bracing bay between two frames"
+check = true
+frames = [0.0, 11.315]
+
+[[line]]
+name = "roof"
+points = [[0.0, 10.5102], [6.278, 10.795], [17.493, 11.3038]]
+lift = 0.2665
+
+[[member]]
+name = "haunch"
+section = "530UB92.4"
+from = "roof.at(0.3)"
+to = "roof.at(6.278)"
+up = "roof.normal(1)"
+align = "top"
+per_frame = true
+
+[[member]]
+name = "rafter"
+section = "360UB50.7"
+from = "roof.at(6.278)"
+to = "roof.at(13.0)"
+up = "roof.normal(8)"
+align = "top"
+per_frame = true
+
+[[purlins]]
+name = "pur"
+line = "roof"
+spacing = 1.2
+start = 1.2
+until = 12.6
+y0 = -1.0
+y1 = 12.3
+section = "Z25019"
+cleats = false
+
+# eave strut between the frames at the first purlin line
+[[member]]
+name = "strut"
+section = "139.7x5CHS"
+from = "roof.at(0.9) - roof.normal(1) * 0.15 + V(0, 0.12, 0)"
+to = "roof.at(0.9) - roof.normal(1) * 0.15 + V(0, 11.315 - 0.12, 0)"
+material = "steel"
+
+# gusset plates on the top flanges (assumed 250 x 180 x 10), axis of the diagonals 80 mm under the top face
+[[plate]]
+name = "g1"
+centre = "roof.at(0.9) + roof.normal(1) * 0.005 + V(0, 0.0, 0)"
+ex = "roof.tangent(1)"
+ey = [0, 1, 0]
+size = [0.25, 0.18, 0.01]
+[[plate]]
+name = "g2"
+centre = "roof.at(0.9) + roof.normal(1) * 0.005 + V(0, 11.315, 0)"
+ex = "roof.tangent(1)"
+ey = [0, 1, 0]
+size = [0.25, 0.18, 0.01]
+[[plate]]
+name = "g3"
+centre = "roof.at(6.9) + roof.normal(8) * 0.005 + V(0, 0.0, 0)"
+ex = "roof.tangent(8)"
+ey = [0, 1, 0]
+size = [0.25, 0.18, 0.01]
+[[plate]]
+name = "g4"
+centre = "roof.at(6.9) + roof.normal(8) * 0.005 + V(0, 11.315, 0)"
+ex = "roof.tangent(8)"
+ey = [0, 1, 0]
+size = [0.25, 0.18, 0.01]
+
+[[member]]
+name = "diagA"
+section = "76.1x3.6CHS"
+from = "roof.at(1.0) - roof.normal(1) * 0.08 + V(0, 0.15, 0)"
+to = "roof.at(6.8) - roof.normal(8) * 0.08 + V(0, 11.315 - 0.15, 0)"
+material = "accent"
+[[member]]
+name = "diagB"
+section = "76.1x3.6CHS"
+from = "roof.at(1.0) - roof.normal(1) * 0.16 + V(0, 11.315 - 0.15, 0)"
+to = "roof.at(6.8) - roof.normal(8) * 0.16 + V(0, 0.15, 0)"
+material = "accent"
+
+[anchors]
+purl = "pur[4] + V(0, 6, 0.2)"
+bayA = "roof.at(0.3) + roof.normal(1) * 0.35"
+bayB = "roof.at(0.3) + roof.normal(1) * 0.35 + V(0, 11.315, 0)"
+[[dim]]
+name = "bay"
+a = "roof.at(0.3) + roof.normal(1) * 0.35"
+b = "roof.at(0.3) + roof.normal(1) * 0.35 + V(0, 11.315, 0)"
+off = [-1.2, 0, 0]
+
+[[view]]
+name = "brace3d"
+camera = "auto"
+auto = { focus = ["diagA", "diagB"], dir = [0.7, -1.0, 0.8], lens = 35, fill = 0.8 }
+width_cm = 15.6
+draw = [["dim3", "bay", "11.315 m", "above"]]
+caption = "(a) the bracing bay from the south-east"
+  [[view.label]]
+  anchor = "m.haunch"
+  text = "530UB92.4 haunch"
+  [[view.label]]
+  anchor = "m.rafter"
+  text = "360UB50.7 mid rafter"
+  [[view.label]]
+  anchor = "m.diagA"
+  text = "CHS 76.1$\\times$3.6 diagonals (assumed; rods are also common)"
+  [[view.label]]
+  anchor = "m.strut"
+  text = "CHS 139.7$\\times$5.0 eave strut"
+  [[view.label]]
+  anchor = "m.g1"
+  text = "gusset plate welded to the top flange (schematic)"
+  [[view.label]]
+  anchor = "purl"
+  text = "Z25019 purlins at 1200"
+
+[[view]]
+name = "braceplan"
+ortho = { look = "-z", scale = 15.0, at = [6.5, 5.6, 11.0] }
+crop = [[-0.8, -1.3, 10], [13.8, 12.6, 10]]
+width_cm = 15.6
+caption = "(b) plan"
+draw = [["dim", "bayA", "bayB", "11.315 m", -0.5, "left"]]
+
+[figure]
+name = "roofbracing"
+key_cols = 2
