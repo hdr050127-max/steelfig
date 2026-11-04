@@ -83,7 +83,10 @@ def main(argv=None):
         try: import PIL; print("Pillow  :", PIL.__version__)
         except ImportError: print("Pillow  : MISSING (pip install pillow) - needed to flatten renders to JPEG")
         try: print("pdflatex:", overlay.pdflatex())
-        except FileNotFoundError as e: print("pdflatex: MISSING -", e, "(only needed for preview PDFs / LaTeX reports)")
+        except FileNotFoundError as e: print("pdflatex: missing - annotated figures will be written as PNG (Pillow); install TinyTeX/MiKTeX for LaTeX fragments and PDF previews")
+        import shutil as _sh
+        print("pdftoppm:", _sh.which("pdftoppm") or "missing (PNG of the PDF preview needs poppler or PyMuPDF; not required)")
+        print("data    :", os.path.join(ROOT, "steelfig", "data"), "+", os.environ.get("STEELFIG_DATA", "(set STEELFIG_DATA for your own CSVs)"))
         print("Python  :", sys.version.split()[0]); return 0
     print("unknown command", cmd); print(__doc__); return 2
 

@@ -67,6 +67,14 @@ def to_png(pdf, dpi=300):
         print("no pdftoppm (brew install poppler) or PyMuPDF: PNG not written; the PDF is at", pdf)
 
 
+def png_figure(sc, out_dir, rep, pieces_png):
+    """annotated PNG per view, drawn with Pillow (no LaTeX needed)."""
+    from steelfig import overlay_png as OP
+    for vn, P, labels, draw, key in pieces_png:
+        out = os.path.join(rep, "preview", "%s_annotated.png" % vn)
+        OP.render(P, labels, draw, key, out); print("annotated png", out)
+
+
 def annotate_file(scene_path, out_dir, report_dir=None, preview=True, png=False):
     """redo only the annotation of an earlier build (labels, highlights, dims) without running Blender."""
     sc = load(scene_path)
@@ -80,7 +88,7 @@ def annotate(sc, out_dir, rep, preview=True):
     from steelfig import overlay as O, compose as C, layout as LY
     name = sc.get("figure", {}).get("name") or os.path.splitext(os.path.basename(out_dir))[0]
     img_dir = sc.get("figure", {}).get("image_dir", "images/steelfig"); F = sc.get("figure", {})
-    layout, rows = C.plan(sc, out_dir); W = float(F.get("width_cm", 15.6)); pieces, key_all = {}, []
+    layout, rows = C.plan(sc, out_dir); W = float(F.get("width_cm", 15.6)); pieces, key_all = {}, []; pieces_png = []
     for r in rows:
         for v, w, h in r:
             vn = v["name"]; jp = os.path.join(out_dir, vn + ".json"); jf = os.path.join(rep, img_dir, vn + ".jpg")
@@ -96,7 +104,9 @@ def annotate(sc, out_dir, rep, preview=True):
                 if l[0].split("#")[0].replace("mid:", "").split(",")[0] not in P.A:
                     sys.exit("ERROR in [[view]] name = \"%s\": label anchor %r is not an anchor of this render; define it under [anchors] "
                              "(expressions are not allowed in `anchor`). Known: %s" % (vn, l[0], ", ".join(sorted(P.A))[:400]))
-            occ = LY.Occupancy(P); fixed = []
+            occ = LY.Occupancy(P); P._occ = occ; fixed = []
+            for d in draw:
+                if d[0] == "dim3" and d[1] + "_a2" not in P.A and d[1] + "_c0_a2" in P.A: O.pick_dim(P, d[1])
             for d in draw:
                 if d[0] == "dim3":
                     try: a2, b2 = P.pts(d[1] + "_a2")[0], P.pts(d[1] + "_b2")[0]; fixed.append(((a2[0] + b2[0]) / 2, (a2[1] + b2[1]) / 2))
@@ -111,13 +121,17 @@ def annotate(sc, out_dir, rep, preview=True):
                 if len(l) > 4: numbered.append(tuple(l))
                 else: n += 1; numbered.append(tuple(l[:4]) + (n,))
             for f in LY.check(P, numbered, draw, key, occ): O.warn("[%s] %s" % (vn, f))
-            key_all += key; pieces[vn] = tik
+            key_all += key; pieces[vn] = tik; pieces_png.append((vn, P, numbered, draw, key))
     key_all += list(F.get("key_extra", []))
     body = C.figure(rows, pieces, W, key_all, F.get("key_cols"))
     O.emit(os.path.join(rep, "figures", "fig_%s.tex" % name), body, "steelfig build")
     if preview:
-        pdf = O.preview_doc(C.page(body, sc.get("title", name), None, W), os.path.join(rep, "preview"), name, cwd=rep)
-        print("preview", pdf)
+        try:
+            pdf = O.preview_doc(C.page(body, sc.get("title", name), None, W), os.path.join(rep, "preview"), name, cwd=rep)
+            print("preview", pdf)
+        except FileNotFoundError:
+            print("no pdflatex: writing the annotated figure as PNG instead (preview/<view>_annotated.png)")
+            png_figure(sc, out_dir, rep, pieces_png)
     print("layout %s: %s" % (layout, "; ".join(" + ".join("%s %.1fx%.1f cm" % (v["name"], w, h) for v, w, h in r) for r in rows)))
     if O.warnings(): print("%d warning(s): check the lines above" % len(O.warnings()))
     return body

@@ -440,19 +440,34 @@ def explode(objs, vector):
     for o in objs: o.location = o.location + Vector(vector)
 
 
-def section_cut(objs, point, normal, hatch=None, size=50.0):
+def section_cut(objs, point, normal, hatch=None, size=50.0, apply=True):
     """cut away everything on the +normal side of the plane through `point`; the new cut faces get the `hatch`
-    material (make it with hatch_mat) so the section reads as a drawing section. objs: list of mesh objects."""
+    material (make it with hatch_mat) so the section reads as a drawing section. objs: list of mesh objects.
+    apply=False keeps the cut as live modifiers (for one view only): call uncut() with the returned handle
+    after rendering to restore the scene."""
     n = Vector(normal).normalized(); c = Vector(point) + n * (size / 2)
     ex = n.orthogonal().normalized(); ey = n.cross(ex)
-    cutter = box("cutter", c, (size, size, size), hatch, rot=rot_frame(ex, ey, n))
+    cutter = box("cutter", c, (size, size, size), hatch, rot=rot_frame(ex, ey, n)); cutter.hide_render = True
+    mods = []
     for o in objs:
         if o.type != 'MESH' or o is cutter: continue
         m = o.modifiers.new("section", "BOOLEAN"); m.operation = "DIFFERENCE"; m.object = cutter; m.solver = "EXACT"
         try: m.material_mode = "TRANSFER"
         except Exception: pass
-        bpy.context.view_layer.objects.active = o
-        bpy.ops.object.modifier_apply(modifier=m.name)
+        if apply:
+            bpy.context.view_layer.objects.active = o
+            bpy.ops.object.modifier_apply(modifier=m.name)
+        else: mods.append((o, m.name))
+    if apply: delete([cutter]); return None
+    return (cutter, mods)
+
+
+def uncut(handle):
+    if not handle: return
+    cutter, mods = handle
+    for o, name in mods:
+        m = o.modifiers.get(name)
+        if m: o.modifiers.remove(m)
     delete([cutter])
 
 
@@ -482,11 +497,28 @@ def check_clashes(objs=None, min_cm3=0.05, skip_ok=True):
         pts = [o.matrix_world @ Vector(c) for c in o.bound_box]
         return Vector(map(min, zip(*pts))), Vector(map(max, zip(*pts)))
     boxes = {o.name: bbox(o) for o in objs}
+    sec = {o.name: (o.users_collection and o.users_collection[0].name == "secondary") for o in objs}
+    from mathutils.bvhtree import BVHTree
+    dg = bpy.context.evaluated_depsgraph_get(); trees = {}
+
+    def tree(o):
+        """BVH of the solid inset by 1 mm along the vertex normals: touching faces come apart, penetrations stay."""
+        if o.name in trees: return trees[o.name]
+        bm = bmesh.new(); bm.from_mesh(o.evaluated_get(dg).to_mesh()); bm.transform(o.matrix_world)
+        bm.normal_update()
+        for v in bm.verts: v.co -= v.normal * 0.001
+        bm.faces.ensure_lookup_table(); bmesh.ops.triangulate(bm, faces=bm.faces)
+        t = BVHTree.FromBMesh(bm); bm.free(); trees[o.name] = t; return t
+
     out = []
     for i, a in enumerate(objs):
         for b in objs[i + 1:]:
+            if sec[a.name] and sec[b.name]: continue                 # purlin-purlin, girt-girt: parallel, never cross
             (a0, a1), (b0, b1) = boxes[a.name], boxes[b.name]
             if any(a1[k] < b0[k] - 1e-4 or b1[k] < a0[k] - 1e-4 for k in range(3)): continue
+            ov = [min(a1[k], b1[k]) - max(a0[k], b0[k]) for k in range(3)]
+            if min(ov) < 2e-3: continue                              # a real penetration overlaps in all three directions
+            if not tree(a).overlap(tree(b)): continue                # surfaces of the inset solids do not cross
             c = a.copy(); c.data = a.data.copy(); bpy.context.scene.collection.objects.link(c)
             m = c.modifiers.new("x", "BOOLEAN"); m.operation = "INTERSECT"; m.object = b; m.solver = "EXACT"
             bpy.context.view_layer.objects.active = c
@@ -585,6 +617,20 @@ def setup(cam_loc, target, lens=40, res=None, ortho=None, line=None, quick=False
     return camo
 
 
+def auto_ortho(camo, look, fit=None, fill=0.9, margin=0.0):
+    """orthographic view that fits the `fit` objects (default all): ortho_scale from the projected extent,
+    centred on the fit. Returns (scale, at)."""
+    objs = fit or all_meshes(); sc = bpy.context.scene
+    pts = [o.matrix_world @ Vector(c) for o in objs for c in o.bound_box]
+    lo, hi = Vector(map(min, zip(*pts))), Vector(map(max, zip(*pts))); at = (lo + hi) / 2
+    axes = {"+x": (1, 2), "-x": (1, 2), "+y": (0, 2), "-y": (0, 2), "-z": (0, 1)}[look]
+    w, h = hi[axes[0]] - lo[axes[0]], hi[axes[1]] - lo[axes[1]]
+    aspect = sc.render.resolution_x / sc.render.resolution_y
+    scale = max(w, h * aspect) / fill
+    ortho_view(camo, look, scale, at); bpy.context.view_layer.update()
+    return scale, at
+
+
 def auto_camera(focus=None, fit=None, direction=(0.6, -1.0, 0.45), lens=40.0, fill=0.8, aspect=None, quick=False, line=None):
     """recommend a camera: look at the centre of the `focus` objects (default: accent-material objects, else all)
     from `direction` (unit vector from the target towards the camera), at the distance that fits the `fit`
@@ -639,6 +685,23 @@ def dim3(anch, name, p, q, off):
     p, q, off = Vector(p), Vector(q), Vector(off)
     anch[name + "_a"], anch[name + "_b"] = tuple(p), tuple(q)
     anch[name + "_a2"], anch[name + "_b2"] = tuple(p + off), tuple(q + off)
+
+
+def dim3_auto(anch, name, p, q, dists=(0.45, 0.8, 1.2, 1.7)):
+    """a 3D dimension whose offset is chosen later by the overlay: candidates are the four directions
+    perpendicular to the measured line (horizontal and vertical perpendiculars, both signs) at three distances;
+    the overlay keeps the one that stays off the steel, inside the picture and away from other annotation."""
+    p, q = Vector(p), Vector(q); d = (q - p).normalized()
+    h = d.cross(Vector((0, 0, 1)))
+    if h.length < 1e-6: h = d.cross(Vector((0, 1, 0)))
+    h.normalize(); vv = h.cross(d).normalized()
+    anch[name + "_a"], anch[name + "_b"] = tuple(p), tuple(q)
+    k = 0
+    dirs = [h, -h, vv, -vv] + [(a + b).normalized() for a in (h, -h) for b in (vv, -vv)]     # 8 directions in the perpendicular plane
+    for u in dirs:
+        for dist in dists:
+            anch["%s_c%d_a2" % (name, k)] = tuple(p + u * dist); anch["%s_c%d_b2" % (name, k)] = tuple(q + u * dist); k += 1
+    anch[name + "_ncand"] = (k, 0, 0)
 
 
 def wave(p, q, amp, side, n=20):

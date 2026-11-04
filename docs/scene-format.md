@@ -76,7 +76,8 @@ check = true           # top level: report solids passing through each other (> 
 [[explode]]  objects = ["ep", "kb"]  vector = [0, -0.3, 0]      # pull parts away (names or name prefixes)
 
 [anchors]            # name = point | list of points; what the labels and lines attach to
-[[dim]]  name  a  b  off                 # 3D dimension line: off = offset vector in the plane of the measured face
+[[dim]]  name  a  b  [off]               # 3D dimension line; without `off` (or off = "auto") the overlay picks a clear
+                                         # place among 32 candidates (perpendicular directions × distances), off the steel
 [[wave]]  name  a  b  amp  side          # buckled shape polyline from a to b bowing by amp along side
 
 [[view]]
@@ -88,6 +89,11 @@ auto = { focus = ["col", "raf"], fit = [...], dir = [0.6, -1, 0.45], lens = 40, 
                                           # printed as `camera <view> = [...]` and used by the viewer, so you can adjust it from there
                                           # or:
 ortho = { look = "+y", scale = 2.6, at = [x, y, z] }    # look: +x -x +y -y -z(plan)
+ortho = { look = "-z", auto = true, fit = ["b_bp", "b_foot"], fill = 0.85 }   # or fitted automatically to objects
+cut = { point = [0, 0, 0.35], normal = [0, 0, 1], objects = ["col"], plane = "xy", hatch = true }
+                                          # section for THIS view only: removes everything on the +normal side of the
+                                          # plane (of the listed objects, default all), hatches the cut faces
+main = true                               # in a row of two, this view takes main_share (0.62) of the width
 crop = [p0, p1]                           # fixed crop (ortho views); otherwise the render crops to the meshes
 bounds = ["wave", …]                      # anchors that must stay inside the crop
 width_cm = 14  |  height_cm = 5.5  max_width_cm = 7     # size on the page

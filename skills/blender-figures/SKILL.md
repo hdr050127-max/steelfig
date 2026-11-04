@@ -8,7 +8,10 @@ description: True-size 3D figures of steel structures for reports and teaching, 
 The tool is the `steelfig` repository (https://github.com/hdr050127-max/steelfig). Find it in this order:
 `$STEELFIG_HOME`, `~/steelfig`, `~/Developer/steelfig`; if none exists, clone it (`git clone
 https://github.com/hdr050127-max/steelfig ~/steelfig`) and run `bin/steelfig doctor` (needs Blender 4.2+, Python
-3.11+ with Pillow, optionally pdflatex and pdftoppm). Below, `steelfig` means `<repo>/bin/steelfig`.
+3.11+ with Pillow, optionally pdflatex and pdftoppm). Below, `steelfig` means `<repo>/bin/steelfig` (`bin\steelfig.cmd` on Windows). Everything the tool needs is in
+the repository: catalogue tables (`steelfig/data`, extendable with `STEELFIG_DATA`), detail knowledge
+(`docs/details`, with the manufacturer sources under `docs/details/sources`), examples and the style. Without
+pdflatex the annotated figure comes out as PNG; say so to the person rather than installing TeX for them.
 
 Read `README.md` first, `docs/scene-format.md` before writing a scene, `docs/figure-style.md` for the look the
 figures must have (grey line-art like a fabricator's manual, one accent colour, no text on the picture, parts

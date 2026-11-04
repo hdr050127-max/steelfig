@@ -30,6 +30,14 @@ Microstran `.arc` model. Output: a LaTeX fragment for the report, a preview PDF,
 git clone https://github.com/hdr050127-max/steelfig ~/steelfig && ~/steelfig/bin/steelfig doctor
 ```
 
+### Windows and machines without TeX
+
+`bin\steelfig.cmd` is the Windows launcher (`python` on the PATH); Blender is found on the PATH or through
+`BLENDER=`. Without `pdflatex` the annotated figure is written as `preview/<view>_annotated.png` (balloons,
+leaders, dimensions and key drawn with Pillow) instead of a LaTeX fragment, so a Word report can still use it.
+Your own section tables: a folder of CSVs with the same columns as `steelfig/data/`, pointed to by
+`STEELFIG_DATA`. Nothing in the tool depends on files outside the repository.
+
 ### With Claude Code
 
 The `skills/blender-figures` folder is a Claude Code skill that drives steelfig the way we use it: one-line

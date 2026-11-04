@@ -59,9 +59,8 @@ caption = "(a) base of the west column"
 
 [[view]]
 name = "baseplan"
-ortho = { look = "-z", scale = 1.1, at = [0, 0, 1.0] }
-crop = [[-0.5, -0.4, 0.5], [0.5, 0.4, 0.5]]
-width_cm = 5.6
+ortho = { look = "-z", auto = true, fit = ["b_bp", "b_foot"], fill = 0.85 }     # fitted to the base plate and footing
+cut = { point = [0, 0, 0.35], normal = [0, 0, 1], objects = ["col"], plane = "xy" }  # this view only: column cut 350 mm up, hatched
 caption = "(b) plan of the base plate"
 draw = [["dim", "cA", "cB", "487", 0.6, "below"], ["dim", "cB", "cC", "120", 0.6, "right"]]
 

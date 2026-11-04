@@ -14,4 +14,7 @@ to the rafter flange tip with one bolt.
 **Sources**: purlin manufacturers' manuals (Stramit, Lysaght) for the purlin orientation and the fly-brace
 principle; course photo (tutor p10: braces from the bottom chord to purlins, both sides); AS 4100 Cl 9.6 for the
 bolt distances; draftsperson.net "Typical Fly Brace Detail" (free CAD block) for the overall arrangement.
-**To verify**: end details (web bolt height, cleat vs bolt through the flange with a bent end), angle sizes.
+**Update 2026-11-04 (Stramit guide, `sources/stramit-guide.md`)**: the fly brace bolts to the purlin web through
+the lower lap / cleat hole, B = 55 mm above the purlin bottom for the 150-250 series (not mid-web); welding to
+purlins is not recommended, so the purlin end is always bolted.
+**To verify**: rafter-end detail (cleat vs bolt through the flange with a bent end), angle sizes.

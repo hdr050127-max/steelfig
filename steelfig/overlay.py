@@ -152,6 +152,7 @@ def _draw(pic, items):
             o.append(r"\draw[line width=0.3pt, {Stealth[length=1.3mm]}-{Stealth[length=1.3mm]}] %s -- %s node[midway, %s, inner sep=1.5pt] {%s};" % (c(a2), c(b2), side, text))
         elif t == "dim3":
             _, nm, text, side = it
+            if nm + "_a2" not in pic.A and nm + "_c0_a2" in pic.A: pick_dim(pic, nm)
             a, b, a2, b2 = (pic.pts(nm + s_)[0] for s_ in ("_a", "_b", "_a2", "_b2"))
             pic.check_dim(text, pic.p3(nm + "_a"), pic.p3(nm + "_b"))
             def ext(p, q):
@@ -206,6 +207,32 @@ def _draw(pic, items):
         elif t == "raw":
             o.append(it[1])
     return o
+
+
+def pick_dim(pic, nm):
+    """choose among the candidate offsets of an automatic 3D dimension (bfig.dim3_auto): the dimension line
+    should run off the steel, stay inside the picture, keep its length readable and sit near the measured line."""
+    from steelfig import layout as LY
+    occ = getattr(pic, "_occ", None) or LY.Occupancy(pic); pic._occ = occ
+    n = int(round(pic.A3.get(nm + "_ncand", [0])[0])); a, b = pic.pts(nm + "_a")[0], pic.pts(nm + "_b")[0]; best = None
+    if n == 0: warn("dimension %r: no candidates stored for the automatic offset" % nm); return
+    for k in range(n):
+        a2, b2 = pic.pts("%s_c%d_a2" % (nm, k))[0], pic.pts("%s_c%d_b2" % (nm, k))[0]
+        L = math.dist(a2, b2); dist = (math.dist(a, a2) + math.dist(b, b2)) / 2
+        cost = 4.0 * occ.segment(a2, b2) + 1.5 * occ.disc((a2[0] + b2[0]) / 2, (a2[1] + b2[1]) / 2, 0.35)
+        for p in (a2, b2):
+            cost += 6.0 * (max(0, -0.3 - p[0], p[0] - pic.W - 0.3) + max(0, -0.3 - p[1], p[1] - pic.H - 0.3))
+        cost += 0.35 * dist + (2.0 if L < 0.8 else 0.0)
+        for (fx, fy) in getattr(pic, "_taken", []):
+            if math.dist(((a2[0] + b2[0]) / 2, (a2[1] + b2[1]) / 2), (fx, fy)) < 0.9: cost += 2.0
+        if best is None or cost < best[0]: best = (cost, k)
+    k = best[1]
+    pic.A[nm + "_a2"], pic.A[nm + "_b2"] = pic.A["%s_c%d_a2" % (nm, k)], pic.A["%s_c%d_b2" % (nm, k)]
+    if nm + "_a2" not in pic.A3 and "%s_c%d_a2" % (nm, k) in pic.A3:
+        pic.A3[nm + "_a2"], pic.A3[nm + "_b2"] = pic.A3["%s_c%d_a2" % (nm, k)], pic.A3["%s_c%d_b2" % (nm, k)]
+    a2, b2 = pic.pts(nm + "_a2")[0], pic.pts(nm + "_b2")[0]
+    pic._taken = getattr(pic, "_taken", []) + [((a2[0] + b2[0]) / 2, (a2[1] + b2[1]) / 2)]
+    if best[0] > 4.0: warn("dimension %r: no clean place found for the dimension line (best candidate still over steel or outside); give `off` by hand" % nm)
 
 
 def _spread(ys, heights, top, bottom):

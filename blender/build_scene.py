@@ -1,6 +1,7 @@
 """Build and render a scene.json (compiled from a steelfig TOML scene) inside Blender.
 Run by steelfig/scene.py: Blender --background --python build_scene.py -- <out_dir> <scene.json> [quick]"""
 import sys, os, json, math
+import bpy
 import bfig as B, assembly as A, connections as CN, rationale as R
 from mathutils import Vector
 from steelfig import sections as SEC_DB
@@ -171,7 +172,8 @@ for k, v in sc.get("anchors", {}).items():
         An[k] = tuple(pt(v)) if not (isinstance(v, list) and v and isinstance(v[0], (list, str))) else [tuple(pt(q)) for q in v]
 for d in sc.get("dim", []):
     with _at('[[dim]] name = "%s"' % d.get("name", "?")):
-        B.dim3(An, d["name"], pt(d["a"]), pt(d["b"]), pt(d["off"]))
+        if d.get("off", "auto") == "auto": B.dim3_auto(An, d["name"], pt(d["a"]), pt(d["b"]))
+        else: B.dim3(An, d["name"], pt(d["a"]), pt(d["b"]), pt(d["off"]))
 for w in sc.get("wave", []):
     with _at('[[wave]] name = "%s"' % w.get("name", "?")):
         An[w["name"]] = B.wave(pt(w["a"]), pt(w["b"]), w.get("amp", 0.3), vec(w.get("side", [0, -1, 0])))
@@ -195,18 +197,32 @@ for v in sc.get("view", []):
         c = v["camera"]; cam = B.setup(cam_loc=c[0:3], target=c[3:6], lens=c[6], res=v.get("res"), line=v.get("line"), quick=quick, cam=opt.get("cam")); cam_list = list(c)
     else:
         o = v["ortho"]; cam = B.setup(cam_loc=(0, -10, 0), target=(0, 0, 0), res=v.get("res"), line=v.get("line"), quick=quick)
-        B.ortho_view(cam, o["look"], o["scale"], pt(o["at"]))
+        if o.get("auto") or "scale" not in o:
+            fit = [ob for ob in B.all_meshes() if any(ob.name == f or ob.name.startswith(f + "_") for f in o.get("fit", []))] or None
+            scale, at = B.auto_ortho(cam, o["look"], fit, o.get("fill", 0.9))
+            print("ortho %s = { look = \"%s\", scale = %.2f, at = [%.2f, %.2f, %.2f] }   (auto)" % (v["name"], o["look"], scale, *at))
+        else:
+            B.ortho_view(cam, o["look"], num(o["scale"]), pt(o["at"]))
     extra = []
     for k in v.get("bounds", []):
         a = An[k]; extra += a if isinstance(a, list) else [a]
     for d in v.get("draw", []):
-        if d[0] == "dim3": extra += [An[d[1] + "_a2"], An[d[1] + "_b2"]]
+        if d[0] == "dim3":
+            if d[1] + "_a2" in An: extra += [An[d[1] + "_a2"], An[d[1] + "_b2"]]
+            else: extra += [An[d[1] + "_c%d_a2" % k] for k in range(int(An[d[1] + "_ncand"][0])) if k % 4 == 1] + [An[d[1] + "_c%d_b2" % k] for k in range(int(An[d[1] + "_ncand"][0])) if k % 4 == 1]
         if d[0] in ("line", "fill"):
             for k in d[1]:
                 k = k.split("#")[0]
                 if k in An: extra += An[k] if isinstance(An[k], list) else [An[k]]
     crop = [tuple(pt(q)) for q in v["crop"]] if "crop" in v else None
+    handle = None
+    if "cut" in v:                                        # section cut for this view only: everything on the +normal side goes
+        cu = v["cut"]; H = B.hatch_mat("hatch_view", (0.78, 0.78, 0.78), (0.1, 0.1, 0.1), pitch=cu.get("pitch", 0.012), plane=cu.get("plane", "xz"))
+        objs = [ob for ob in B.all_meshes() if not cu.get("objects") or any(ob.name == f or ob.name.startswith(f + "_") for f in cu["objects"])]
+        handle = B.section_cut(objs, pt(cu["point"]), vec(cu["normal"]), hatch=H if cu.get("hatch", True) else None, apply=False)
+        bpy.context.view_layer.update()
     B.render(out, v["name"], An, bounds_extra=extra, crop_pts=crop, margin=v.get("margin", 0.02))
+    B.uncut(handle)
     if cam_list:
         jp = os.path.join(out, v["name"] + ".json"); J = json.load(open(jp)); J["camera"] = cam_list; json.dump(J, open(jp, "w"), indent=1)
     # the camera is rebuilt per view: remove it and the lights so the next setup() starts clean

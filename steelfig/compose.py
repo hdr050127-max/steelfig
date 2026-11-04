@@ -43,9 +43,18 @@ def plan(sc, out_dir):
             if "height_cm" in v: w = min(w, float(v["height_cm"]) * a)
             rows.append([(v, w, w / a)])
         else:
-            avail = W - GAP * (m - 1); asum = sum(A.get(v["name"], 1.5) for v in group)
-            h = min(avail / asum, MAX_H)
-            rows.append([(v, h * A.get(v["name"], 1.5), h) for v in group])
+            avail = W - GAP * (m - 1)
+            mains = [v for v in group if v.get("main")]
+            if mains and len(group) == 2:                           # the main view takes `main_share` of the width, the other is scaled to fit
+                share = float(F.get("main_share", 0.62)); vm = mains[0]; vo = [v for v in group if v is not vm][0]
+                wm = avail * share; hm = min(wm / A.get(vm["name"], 1.5), MAX_H); wm = hm * A.get(vm["name"], 1.5)
+                wo = avail - wm; ho = wo / A.get(vo["name"], 1.5)
+                if ho > hm: ho = hm; wo = ho * A.get(vo["name"], 1.5)
+                rows.append([(v, wm, hm) if v is vm else (v, wo, ho) for v in group])
+            else:
+                asum = sum(A.get(v["name"], 1.5) for v in group)
+                h = min(avail / asum, MAX_H)
+                rows.append([(v, h * A.get(v["name"], 1.5), h) for v in group])
     return layout, rows
 
 
@@ -61,7 +70,7 @@ def figure(rows, pieces, W, key=None, key_cols=None, title=None):
         cells = []
         for v, w, h in r:
             cap = caption(k, n, v.get("caption", "")); k += 1
-            cells.append(r"\begin{minipage}[t]{%.2fcm}\centering %s%s\end{minipage}" % (w, pieces[v["name"]],
+            cells.append(r"\begin{minipage}[b]{%.2fcm}\centering %s%s\end{minipage}" % (w, pieces[v["name"]],
                          (r"\\[0.8mm]{\small %s}" % cap) if cap else ""))
         out.append((r"\hfill".join(cells)) if len(cells) > 1 else r"\centerline{%s}" % cells[0])
     body = ("\n\n" + r"\vspace{3.5mm}" + "\n").join(out)

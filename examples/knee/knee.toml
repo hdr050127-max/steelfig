@@ -72,11 +72,10 @@ ct = [0.2302, 0, 4.8]
 cb = [-0.2302, 0, 4.8]
 I = "roof.at(0.0)"
 
-[[dim]]
+[[dim]]                                    # off = "auto" (default): the overlay picks a clear place for the dimension line
 name = "le"
 a = "roof.at(0.25) - roof.normal(1) * 0.4064 + V(0, -0.089, 0)"
 b = "pur[1] - roof.normal(1) * 0.4064 + V(0, -0.089, 0)"
-off = "-roof.normal(1) * 0.7 + V(0, -0.25, 0)"
 
 [[wave]]
 name = "wave"
@@ -87,8 +86,8 @@ side = [0, -1, 0]
 
 [[view]]
 name = "knee"
+main = true                                # takes ~62 % of the row; the elevation is scaled to fit beside it
 camera = [7.5, -8.0, 4.2, 1.8, 0.2, 5.6, 40]
-width_cm = 14
 bounds = ["wave"]
 draw = [["line", ["wave"], "line width=0.8pt, densely dashed, acc"], ["dim3", "le", "$L_e = 2400$", "below"]]
   [[view.label]]

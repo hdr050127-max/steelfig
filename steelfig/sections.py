@@ -22,8 +22,11 @@ def _load():
     global _db
     if _db is not None: return _db
     _db = {}
-    for f in ("i_sections.csv", "channels.csv", "angles.csv", "hollow_sections.csv", "purlins.csv"):
-        p = os.path.join(DATA, f)
+    import glob
+    files = [os.path.join(DATA, f) for f in ("i_sections.csv", "channels.csv", "angles.csv", "hollow_sections.csv", "purlins.csv")]
+    extra = os.environ.get("STEELFIG_DATA")                       # a folder of your own CSVs with the same columns (own catalogue, other grades)
+    if extra: files += sorted(glob.glob(os.path.join(extra, "*.csv")))
+    for p in files:
         if not os.path.exists(p): continue
         with open(p, newline="") as fh:
             for r in csv.DictReader(fh):
