@@ -393,7 +393,7 @@ def setup(cam_loc, target, lens=40, res=None, ortho=None, line=None, quick=False
     if cam: cam_loc, target, lens = tuple(cam[0:3]), tuple(cam[3:6]), cam[6]
     R = ST["render"]; res = tuple(res or R["resolution"]); line = line or R["line_width"]
     if line_color is None: line_color = STYLE.rgba(ST["colours"]["line"])[:3]
-    if quick: q = R["quick_scale"]; res = (int(res[0] * q), int(res[1] * q)); line = max(0.8, line * 0.65)
+    if quick: q = R["quick_scale"]; res = (int(res[0] * q), int(res[1] * q)); line = max(0.8, line * q * 1.3)
     sc = bpy.context.scene
     world = bpy.data.worlds.new("w"); sc.world = world; world.use_nodes = True
     bg = world.node_tree.nodes["Background"]; bg.inputs[0].default_value = (1, 1, 1, 1); bg.inputs[1].default_value = R["background_strength"]
@@ -409,6 +409,13 @@ def setup(cam_loc, target, lens=40, res=None, ortho=None, line=None, quick=False
         try: sc.render.engine = eng; break
         except TypeError: pass
     sc.render.resolution_x, sc.render.resolution_y = res
+    e = sc.eevee
+    e.taa_render_samples = int(R.get("samples", 64) * (0.5 if quick else 1))
+    for attr, val in (("use_fast_gi", R.get("fast_gi", True)), ("use_shadows", R.get("shadows", True)),
+                      ("shadow_resolution_scale", R.get("shadow_quality", 1.0)), ("shadow_ray_count", 2), ("shadow_step_count", 4),
+                      ("use_gtao", R.get("fast_gi", True))):                      # use_gtao: EEVEE legacy (Blender < 4.2)
+        try: setattr(e, attr, val)
+        except (AttributeError, TypeError): pass
     sc.render.film_transparent = True
     sc.view_settings.view_transform = 'Standard'
     sc.render.use_freestyle = True

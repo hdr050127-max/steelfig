@@ -31,7 +31,10 @@ bin/steelfig build examples/knee/knee.toml /tmp/knee_out --report /tmp/knee_rep 
 open /tmp/knee_rep/preview/prev_knee.pdf
 ```
 
-`--quick` renders at half size to check the composition; drop it for the final. Rendering and annotation are
+`--quick` renders small (40 %, fewer samples) to check the composition; drop it for the final: by default a view
+is rendered at 4200 × 2940 px with 128 samples, ambient occlusion and soft shadows (about 3 s per view on an
+Apple-silicon Mac), which prints at ~600 dpi for a 14 cm figure. The knobs are in `steelfig/styles/default.toml`
+(`[render]`: resolution, line_width, samples, fast_gi, shadows). Rendering and annotation are
 separate: once a view is rendered you can add labels, tint a member (`highlight`), fill a region, add dimensions
 and rerun `steelfig annotate …` in under a second. Then copy the scene file, change the sections, points and
 labels (see `docs/scene-format.md`), and in the report:

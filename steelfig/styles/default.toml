@@ -13,9 +13,13 @@ grout  = "#cbcac6"
 line   = "#000000"   # Freestyle outline: keep black (linear 0)
 
 [render]
-line_width = 1.6     # px at full resolution
-quick_scale = 0.5
-resolution = [3000, 2100]
+resolution = [4200, 2940]   # px before cropping; a 14 cm figure then prints at ~600 dpi
+line_width = 2.2            # Freestyle outline, px at full resolution (scaled with quick_scale)
+quick_scale = 0.4           # --quick: composition checks only
+samples = 128               # EEVEE anti-aliasing samples (64 default)
+fast_gi = true              # horizon-scan ambient occlusion: shading where flanges meet webs
+shadows = true              # soft sun shadows (angle 8 deg)
+shadow_quality = 1.0        # shadow_resolution_scale
 background_strength = 0.55
 
 [tikz]
