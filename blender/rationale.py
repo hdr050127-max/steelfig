@@ -44,7 +44,7 @@ def dump(path=None, title="figure"):
     else:
         lines += ["", "All realism checks passed."]
     text = "\n".join(lines) + "\n"
-    if path: open(path, "w").write(text)
+    if path: open(path, "w", encoding="utf-8").write(text)
     for part, msg, src in _fails: print("REALISM %s: %s" % (part, msg))
     print("rationale: %d decisions, %d realism check(s) failed%s" % (len(_notes), len(_fails), ", written to " + path if path else ""))
     return text

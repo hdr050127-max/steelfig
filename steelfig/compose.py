@@ -21,7 +21,7 @@ def aspects(sc, out_dir):
     for v in sc.get("view", []):
         jp = os.path.join(out_dir, v["name"] + ".json")
         if os.path.exists(jp):
-            rx, ry = json.load(open(jp))["res"]; out[v["name"]] = rx / ry
+            rx, ry = json.load(open(jp, encoding="utf-8"))["res"]; out[v["name"]] = rx / ry
     return out
 
 

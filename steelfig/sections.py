@@ -30,7 +30,7 @@ def _load():
     files += sorted(glob.glob(os.path.join(res, "*.csv")))        # shared resources folder of the repository
     for p in files:
         if not os.path.exists(p): continue
-        with open(p, newline="") as fh:
+        with open(p, newline="", encoding="utf-8") as fh:
             for r in csv.DictReader(fh):
                 rec = {}
                 for k, v in r.items():
@@ -129,7 +129,7 @@ def profile(designation, segments=32, min_t=0.0):
 
 def bolt(designation):
     """bolt dimensions (metres) from data/bolts.csv: d, pitch, head_af, head_h, nut_h, washer_od, washer_t, hole."""
-    with open(os.path.join(DATA, "bolts.csv"), newline="") as fh:
+    with open(os.path.join(DATA, "bolts.csv"), newline="", encoding="utf-8") as fh:
         for r in csv.DictReader(fh):
             if _norm(r["designation"]) == _norm(designation):
                 return {k: (float(v) / 1000 if k not in ("designation", "verified") else v) for k, v in r.items()}

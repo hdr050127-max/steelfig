@@ -61,7 +61,7 @@ function animate(){ requestAnimationFrame(animate); controls.update(); readout()
 
 
 def views_of(out_dir):
-    sc = json.load(open(os.path.join(out_dir, "scene.json")))
+    sc = json.load(open(os.path.join(out_dir, "scene.json"), encoding="utf-8"))
     res = None
     try:
         from steelfig import style; res = style.load(sc.get("style"))["render"]["resolution"]
@@ -70,7 +70,7 @@ def views_of(out_dir):
     for v in sc.get("view", []):
         cam = None
         jp = os.path.join(out_dir, v["name"] + ".json")
-        if os.path.exists(jp): cam = json.load(open(jp)).get("camera")
+        if os.path.exists(jp): cam = json.load(open(jp, encoding="utf-8")).get("camera")
         if cam is None and isinstance(v.get("camera"), list): cam = v["camera"]
         if cam: vs.append(dict(name=v["name"], cam=cam, res=v.get("res") or res))
     return vs
@@ -78,7 +78,7 @@ def views_of(out_dir):
 
 def write(out_dir):
     p = os.path.join(out_dir, "viewer.html")
-    open(p, "w").write(PAGE.replace("__V__", THREE).replace("__VIEWS__", json.dumps(views_of(out_dir))))
+    open(p, "w", encoding="utf-8").write(PAGE.replace("__V__", THREE).replace("__VIEWS__", json.dumps(views_of(out_dir))))
     return p
 
 
@@ -100,10 +100,10 @@ def serve(out_dir, port=8765, open_browser=False):
 
 def set_camera(scene_path, view, cam):
     """write `camera = [x, y, z, tx, ty, tz, lens]` into the named [[view]] of a scene file."""
-    s = open(scene_path).read()
+    s = open(scene_path, encoding="utf-8").read()
     cam = [float(x) for x in (cam.split(",") if isinstance(cam, str) else cam)]
     line = "camera = [%s]" % ", ".join(("%.3f" % v).rstrip("0").rstrip(".") if i < 6 else "%g" % v for i, v in enumerate(cam))
     pat = re.compile(r'(\[\[view\]\]\s*\nname\s*=\s*"%s"\s*\n(?:(?!\[\[).*\n)*?)camera\s*=\s*\[[^\]]*\]' % re.escape(view))
     new, n = pat.subn(lambda m: m.group(1) + line, s)
     if not n: raise SystemExit("view %r with a camera line not found in %s" % (view, scene_path))
-    open(scene_path, "w").write(new); print("set", view, line)
+    open(scene_path, "w", encoding="utf-8").write(new); print("set", view, line)

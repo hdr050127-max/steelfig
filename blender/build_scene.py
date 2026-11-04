@@ -8,7 +8,7 @@ from steelfig import sections as SEC_DB
 
 out, quick, opt = B.args()
 spec = [a for a in sys.argv[sys.argv.index("--") + 1:] if a.endswith(".json")][0]
-sc = json.load(open(spec))
+sc = json.load(open(spec, encoding="utf-8"))
 WHERE = ["scene"]
 
 
@@ -230,7 +230,7 @@ for v in sc.get("view", []):
     B.render(out, v["name"], An, bounds_extra=extra, crop_pts=crop, margin=v.get("margin", 0.02))
     B.uncut(handle)
     if cam_list:
-        jp = os.path.join(out, v["name"] + ".json"); J = json.load(open(jp)); J["camera"] = cam_list; json.dump(J, open(jp, "w"), indent=1)
+        jp = os.path.join(out, v["name"] + ".json"); J = json.load(open(jp, encoding="utf-8")); J["camera"] = cam_list; json.dump(J, open(jp, "w", encoding="utf-8"), indent=1)
     # the camera is rebuilt per view: remove it and the lights so the next setup() starts clean
     import bpy
     for ob in [o for o in bpy.context.scene.objects if o.type in ("CAMERA", "LIGHT")]: bpy.data.objects.remove(ob, do_unlink=True)

@@ -22,6 +22,10 @@ if ROOT not in sys.path: sys.path.insert(0, ROOT)
 
 
 def main(argv=None):
+    if os.name == "nt":
+        for st in (sys.stdout, sys.stderr):
+            try: st.reconfigure(encoding="utf-8", errors="replace")
+            except Exception: pass
     a = list(argv if argv is not None else sys.argv[1:])
     if not a or a[0] in ("-h", "--help"): print(__doc__); return 0
     cmd = a.pop(0)

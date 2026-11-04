@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Deterministic regression: build every example scene with --quick --check and require a silent build
 (no WARNING / CLASH / REALISM / ERROR), the figure fragment, the preview PDF and the rationale file.
-    python3 tools/regress.py [out_root]          (default: /tmp/steelfig_regress)
+    python3 tools/regress.py [out_root]          (default: <temp>/steelfig_regress)
 Exit code 1 if any scene fails. Run it after every change to the tool, the style or the examples."""
 import os, sys, glob, subprocess, time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-out_root = sys.argv[1] if len(sys.argv) > 1 else "/tmp/steelfig_regress"
+import tempfile
+out_root = sys.argv[1] if len(sys.argv) > 1 else os.path.join(tempfile.gettempdir(), "steelfig_regress")
 scenes = sorted(p for p in glob.glob(os.path.join(ROOT, "examples", "*", "*.toml")) if not os.path.basename(p).startswith("brief"))
 rows, bad = [], 0
 for sc in scenes:

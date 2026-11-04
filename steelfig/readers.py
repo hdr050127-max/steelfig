@@ -32,7 +32,7 @@ class Model:
 def read_arc(path):
     """Microstran archive (.arc). VERT 2 means Y is vertical in the file: mapped to z up here (x, y, z) <- (x, z, y)."""
     M = Model(); vert = 2; unit = 1.0
-    with open(path, errors="replace") as fh:
+    with open(path, errors="replace", encoding="utf-8") as fh:
         lines = fh.read().splitlines()
     for i, l in enumerate(lines):
         t = l.split()
@@ -56,10 +56,10 @@ def read_arc(path):
 def read_csv(nodes_csv, members_csv):
     """nodes.csv: id,x,y,z (metres, z up); members.csv: id,a,b,section (section = designation or property name)."""
     M = Model()
-    with open(nodes_csv, newline="") as fh:
+    with open(nodes_csv, newline="", encoding="utf-8") as fh:
         for r in csv.DictReader(fh):
             M.nodes[int(r["id"])] = (float(r["x"]), float(r.get("y", 0) or 0), float(r["z"]))
-    with open(members_csv, newline="") as fh:
+    with open(members_csv, newline="", encoding="utf-8") as fh:
         for r in csv.DictReader(fh):
             M.members.append(dict(id=int(r["id"]), a=int(r["a"]), b=int(r["b"]), prop=r.get("section", ""), axis="", rel=[]))
             M.props.setdefault(r.get("section", ""), r.get("section", ""))

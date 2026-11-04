@@ -7,6 +7,9 @@ description: "True-size 3D figures of steel structures for reports and teaching,
 
 ## Step 0, every time: `python3 <this skill folder>/scripts/setup.py`
 
+On Windows run it with `python` or `py -3` (the `python3` name there is usually the Microsoft Store stub), and
+use `bin\steelfig.cmd` wherever this file says `steelfig`.
+
 If `python3` itself is missing (a Mac without the command line tools, a bare Windows), stop and ask the person to
 install Python 3.12 from https://www.python.org/downloads/ (macOS alternative: `xcode-select --install`); the
 script cannot run before that.

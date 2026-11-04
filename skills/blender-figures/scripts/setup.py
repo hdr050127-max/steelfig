@@ -74,7 +74,7 @@ def find_python():
     places += glob.glob(os.path.join(home, "AppData", "Local", "Programs", "Python", "Python31[1-9]*", "python.exe"))
     places += glob.glob(os.path.join(home, ".pyenv", "versions", "3.1[1-9]*", "bin", "python3"))
     for p in [sys.executable] + places:
-        if p and os.path.exists(p) and py_ok(p): return p
+        if p and os.path.exists(p) and "WindowsApps" not in p and py_ok(p): return p
     return None
 
 
@@ -86,7 +86,7 @@ if py is None:
     print("Python : MISSING a 3.11+ interpreter (steelfig needs tomllib). Install Python 3.12 from https://www.python.org/downloads/ (or `brew install python@3.12`) and re-run.")
     py = sys.executable
 else:
-    open(os.path.join(path, ".python"), "w").write(py + "\n"); print("Python :", py)
+    open(os.path.join(path, ".python"), "w", encoding="utf-8").write(py + "\n"); print("Python :", py)
 
 
 # ---------------------------------------------------------------- 3. Python packages
@@ -106,12 +106,20 @@ if need and install:
 # ---------------------------------------------------------------- 4. LaTeX (optional)
 def tex_bins():
     return [p for p in [shutil.which("pdflatex"), "/Library/TeX/texbin/pdflatex"] + glob.glob(os.path.join(home, "Library", "TinyTeX", "bin", "*", "pdflatex"))
-            + glob.glob(os.path.join(home, ".TinyTeX", "bin", "*", "pdflatex")) + glob.glob(os.path.join(home, "AppData", "Roaming", "TinyTeX", "bin", "*", "pdflatex.exe")) if p and os.path.exists(p)]
+            + glob.glob(os.path.join(home, ".TinyTeX", "bin", "*", "pdflatex")) + glob.glob(os.path.join(home, "AppData", "Roaming", "TinyTeX", "bin", "*", "pdflatex.exe"))
+            + glob.glob(os.path.join(os.environ.get("LOCALAPPDATA", ""), "Programs", "MiKTeX", "miktex", "bin", "*", "pdflatex.exe")) + glob.glob(r"C:\Program Files\MiKTeX*\miktex\bin\*\pdflatex.exe") if p and os.path.exists(p)]
 
 
 if not tex_bins() and install and "--no-tex" not in flags:
     if win:
-        if shutil.which("winget"): sh(["winget", "install", "-e", "--id", "MiKTeX.MiKTeX", "--accept-package-agreements", "--accept-source-agreements"])
+        if shutil.which("winget"):
+            sh(["winget", "install", "-e", "--id", "MiKTeX.MiKTeX", "--accept-package-agreements", "--accept-source-agreements"])
+            tb = tex_bins()
+            if tb:                                  # let MiKTeX fetch packages on its own, and fetch the ones tikz needs now
+                d = os.path.dirname(tb[0])
+                sh([os.path.join(d, "initexmf.exe"), "--set-config-value", "[MPM]AutoInstall=1"])
+                sh([os.path.join(d, "miktex.exe"), "packages", "install", "pgf", "standalone", "lm", "xcolor", "amsmath", "graphics", "tools"])
+            else: print("MiKTeX installed but pdflatex not found yet: open a new terminal and re-run the doctor")
         else: print("TeX: install MiKTeX from https://miktex.org/download (it fetches tikz on first use)")
     else:
         print("installing TinyTeX into your home folder (about 120 MB)")

@@ -26,7 +26,7 @@ def main(brief_path, scene_path, log_path=None):
     for v in B.get("views", []):
         if v not in names: miss.append("view %r is not in the scene (views: %s)" % (v, ", ".join(names)))
     if log_path:
-        bad = [l.strip() for l in open(log_path) if l.startswith(("overlay WARNING", "CLASH", "REALISM", "ERROR"))]
+        bad = [l.strip() for l in open(log_path, encoding="utf-8") if l.startswith(("overlay WARNING", "CLASH", "REALISM", "ERROR"))]
         miss += ["build log: " + l for l in bad]
     for m in miss: print("BRIEF MISS:", m)
     print("brief check: %d item(s) checked, %d miss" % (len(B.get("parts", [])) + len(B.get("dims", [])) + len(B.get("views", [])), len(miss)))

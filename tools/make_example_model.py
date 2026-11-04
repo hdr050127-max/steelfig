@@ -11,8 +11,8 @@ nodes = {1: (0, 0, 0), 2: (L, 0, 0), 11: (0, 0, H), 12: (hl, 0, z(hl)), 13: (L /
 members = [(1, 1, 11, "410UB53.7"), (2, 2, 15, "410UB53.7"), (101, 11, 12, "460UB67.1"), (102, 12, 13, "360UB44.7"),
            (103, 13, 14, "360UB44.7"), (104, 14, 15, "460UB67.1")]
 os.makedirs(os.path.dirname(pre) or ".", exist_ok=True)
-with open(pre + "-nodes.csv", "w", newline="") as f:
+with open(pre + "-nodes.csv", "w", newline="", encoding="utf-8") as f:
     w = csv.writer(f); w.writerow(["id", "x", "y", "z"]); [w.writerow([i, "%.4f" % x, "%.4f" % y, "%.4f" % zz]) for i, (x, y, zz) in nodes.items()]
-with open(pre + "-members.csv", "w", newline="") as f:
+with open(pre + "-members.csv", "w", newline="", encoding="utf-8") as f:
     w = csv.writer(f); w.writerow(["id", "a", "b", "section"]); w.writerows(members)
 print("wrote", pre + "-nodes.csv", pre + "-members.csv")

@@ -788,7 +788,7 @@ def render(out_dir, name, anchors=None, margin=0.02, bounds_extra=(), crop_pts=N
           for k, p in ((k, list(p) if not isinstance(p, Vector) else list(p)) for k, p in anchors.items())}
     idmap = render_ids(os.path.join(out_dir, name + "_id.png")) if ids else {}
     bg = [o.name for o in sc.objects if o.type == 'MESH' and o.data.materials and o.data.materials[0].name in ("conc", "grout", "sheet", "finish_galvanised") and not o.name.startswith(("pur", "girt"))]
-    json.dump(dict(res=res, anchors=out, anchors3d=a3, ortho=sc.camera.data.type == 'ORTHO', ids=idmap, background=bg), open(os.path.join(out_dir, name + ".json"), "w"), indent=1)
+    json.dump(dict(res=res, anchors=out, anchors3d=a3, ortho=sc.camera.data.type == 'ORTHO', ids=idmap, background=bg), open(os.path.join(out_dir, name + ".json"), "w", encoding="utf-8"), indent=1)
     print("rendered", os.path.join(out_dir, name + ".png"), res)
 
 
@@ -798,7 +798,8 @@ render2 = lambda path, anchors, json_path, **kw: render(os.path.dirname(path), o
 def args():
     """command line after "--": <out_dir> [quick] [cam=x,y,z,tx,ty,tz,lens] [key=value ...].
     Returns (out_dir, quick, opts) with opts["cam"] a float list when given, other key=value as strings."""
-    a = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else ["/tmp/bfig"]
+    import tempfile
+    a = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [os.path.join(tempfile.gettempdir(), "bfig")]
     out = a[0]; quick = "quick" in a; opts = {}
     for t in a[1:]:
         if "=" in t:

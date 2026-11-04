@@ -19,7 +19,7 @@ def fmt(v):
 
 def write(name, header, rows):
     p = os.path.join(OUT, name)
-    with open(p, "w", newline="") as f:
+    with open(p, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f); w.writerow(header); w.writerows(rows)
     print("wrote", name, len(rows))
 
