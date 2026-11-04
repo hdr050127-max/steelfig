@@ -201,7 +201,8 @@ def build_from(sc, base, out_dir, report_dir, quick=False, preview=True, png=Fal
     renders and writes the plain views only (geometry checkpoint)."""
     os.makedirs(out_dir, exist_ok=True)
     for md in sc.get("model", []):
-        if not os.path.isabs(md["path"]): md["path"] = os.path.join(base, md["path"])
+        if md["path"].startswith("res:"): md["path"] = os.path.join(ROOT, "resources", md["path"][4:])      # the shared resources folder
+        elif not os.path.isabs(md["path"]): md["path"] = os.path.join(base, md["path"])
     if sc.get("style"): os.environ["STEELFIG_STYLE"] = sc["style"] if os.path.isabs(sc["style"]) or "/" not in sc["style"] else os.path.join(base, sc["style"])
     spec = os.path.join(out_dir, "scene.json"); json.dump(sc, open(spec, "w"), indent=1)
     run_blender(os.path.join(ROOT, "blender", "build_scene.py"), out_dir, [spec] + (["quick"] if quick else []) + (["check=1"] if check else []))

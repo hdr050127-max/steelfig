@@ -38,18 +38,22 @@ leaders, dimensions and key drawn with Pillow) instead of a LaTeX fragment, so a
 Your own section tables: a folder of CSVs with the same columns as `steelfig/data/`, pointed to by
 `STEELFIG_DATA`. Nothing in the tool depends on files outside the repository.
 
-### With Claude Code
-
-The `skills/blender-figures` folder is a Claude Code skill that drives steelfig the way we use it: one-line
-request → written brief for confirmation → scene → checks → figure. Install it for your own Claude Code with
+### With Claude Code: install the skill, it brings the tool
 
 ```bash
 npx skills add hdr050127-max/steelfig --skill blender-figures -g -a claude-code -y
 ```
 
-(or copy `skills/blender-figures/` into `~/.claude/skills/`). Then ask for a figure in plain words, e.g.
-"draw the rafter-to-column knee with its purlins and fly braces". Set `STEELFIG_HOME` if the clone is not in
-`~/steelfig` or `~/Developer/steelfig`.
+(or copy `skills/blender-figures/` into `~/.claude/skills/`). The skill's `scripts/setup.py` clones this repository
+to `~/steelfig` the first time it is used and keeps it updated, so nobody edits a path. Then ask for a figure in
+plain words, e.g. "draw the rafter-to-column knee with its purlins and fly braces".
+
+### The shared resources folder
+
+`resources/` travels with the repository: `catalogues/` (section CSVs and manufacturer excerpts), `details/`
+(standard details you may share), `models/` (analysis models, referenced as `path = "res:models/x.arc"`),
+`styles/`, and `local/` for private material that is never committed. Drop files in; `steelfig resources` lists
+them and the tool loads CSVs and styles from there automatically.
 
 ## First figure
 

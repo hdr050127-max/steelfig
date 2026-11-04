@@ -7,7 +7,9 @@ STYLES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "styles")
 
 def load(name_or_path=None):
     p = name_or_path or os.environ.get("STEELFIG_STYLE") or "default"
-    if not os.path.exists(p): p = os.path.join(STYLES, p + ".toml")
+    if not os.path.exists(p):
+        res = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "resources", "styles", p + ".toml")
+        p = res if os.path.exists(res) else os.path.join(STYLES, p + ".toml")
     with open(p, "rb") as fh: return tomllib.load(fh)
 
 

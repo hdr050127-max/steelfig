@@ -4,3 +4,7 @@ __pycache__/
 *.aux
 *.log
 .DS_Store
+
+# private resources
+resources/local/*
+!resources/local/README.md

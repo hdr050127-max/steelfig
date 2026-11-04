@@ -5,13 +5,18 @@ description: True-size 3D figures of steel structures for reports and teaching, 
 
 # blender-figures: report figures of steel structures with steelfig
 
-The tool is the `steelfig` repository (https://github.com/hdr050127-max/steelfig). Find it in this order:
-`$STEELFIG_HOME`, `~/steelfig`, `~/Developer/steelfig`; if none exists, clone it (`git clone
-https://github.com/hdr050127-max/steelfig ~/steelfig`) and run `bin/steelfig doctor` (needs Blender 4.2+, Python
-3.11+ with Pillow, optionally pdflatex and pdftoppm). Below, `steelfig` means `<repo>/bin/steelfig` (`bin\steelfig.cmd` on Windows). Everything the tool needs is in
-the repository: catalogue tables (`steelfig/data`, extendable with `STEELFIG_DATA`), detail knowledge
-(`docs/details`, with the manufacturer sources under `docs/details/sources`), examples and the style. Without
-pdflatex the annotated figure comes out as PNG; say so to the person rather than installing TeX for them.
+## Step 0, every time: `python3 <this skill folder>/scripts/setup.py`
+
+It clones the `steelfig` repository (https://github.com/hdr050127-max/steelfig) to `~/steelfig` on first use,
+updates it on later uses (fast-forward only), prints `STEELFIG_HOME=<path>` and the doctor report (Blender,
+Pillow, pdflatex). Use that path for everything below; `steelfig` means `<path>/bin/steelfig`
+(`bin\steelfig.cmd` on Windows). Everything the tool needs travels with the repository: catalogue tables
+(`steelfig/data`), detail knowledge with its sources (`docs/details`, `docs/details/sources`), examples, styles,
+and the shared **`resources/`** folder (catalogues / details / models / styles / local). `steelfig resources`
+lists what the person has dropped in there; read a file there before guessing a rule, cite it in the rationale,
+and when the person gives you a catalogue, a drawing or a model, put it in the matching subfolder (private
+material under `resources/local/`, which is never committed). Without pdflatex the annotated figure comes out as
+PNG; say so rather than installing TeX for them.
 
 Read `README.md` first, `docs/scene-format.md` before writing a scene, `docs/figure-style.md` for the look the
 figures must have (grey line-art like a fabricator's manual, one accent colour, no text on the picture, parts

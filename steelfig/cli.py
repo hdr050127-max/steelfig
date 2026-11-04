@@ -13,6 +13,7 @@
   steelfig model <file.arc|nodes.csv>                                                summarise an analysis model
   steelfig brief-check <brief.toml> <scene.toml> [build.log]                        parts / dims / views of the brief vs the scene
   steelfig regress [out_root]                                                        build every example silently (tools/regress.py)
+  steelfig resources                                                                 list the shared resources folder (catalogues, details, models, styles, local)
   steelfig doctor                                                                    check Blender, Pillow, pdflatex"""
 import os, sys, shutil
 
@@ -76,6 +77,12 @@ def main(argv=None):
     if cmd == "regress":
         import subprocess
         return subprocess.call([sys.executable, os.path.join(ROOT, "tools", "regress.py"), *a[:1]])
+    if cmd == "resources":
+        res = os.path.join(ROOT, "resources")
+        for d in ("catalogues", "details", "models", "styles", "local"):
+            fs = sorted(f for f in os.listdir(os.path.join(res, d)) if not f.startswith("."))
+            print("%-11s %s" % (d + "/", ", ".join(fs) if fs else "(empty)"))
+        return 0
     if cmd == "doctor":
         from steelfig import scene, overlay
         try: print("Blender :", scene.blender())

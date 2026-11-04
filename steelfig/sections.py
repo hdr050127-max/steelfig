@@ -26,6 +26,8 @@ def _load():
     files = [os.path.join(DATA, f) for f in ("i_sections.csv", "channels.csv", "angles.csv", "hollow_sections.csv", "purlins.csv")]
     extra = os.environ.get("STEELFIG_DATA")                       # a folder of your own CSVs with the same columns (own catalogue, other grades)
     if extra: files += sorted(glob.glob(os.path.join(extra, "*.csv")))
+    res = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "resources", "catalogues")
+    files += sorted(glob.glob(os.path.join(res, "*.csv")))        # shared resources folder of the repository
     for p in files:
         if not os.path.exists(p): continue
         with open(p, newline="") as fh:

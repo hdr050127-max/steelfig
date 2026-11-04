@@ -353,7 +353,7 @@ def pdflatex():
 
 def preview_doc(src, out_dir, name, cwd=None):
     """compile a complete LaTeX document to <out_dir>/prev_<name>.pdf (image paths resolve from cwd)."""
-    os.makedirs(out_dir, exist_ok=True)
+    out_dir = os.path.abspath(out_dir); os.makedirs(out_dir, exist_ok=True)      # pdflatex runs in cwd: output dir must be absolute
     tex = os.path.join(out_dir, "prev_%s.tex" % name); open(tex, "w").write(src)
     r = subprocess.run([pdflatex(), "-interaction=nonstopmode", "-halt-on-error", "-output-directory", out_dir, tex],
                        cwd=cwd or os.getcwd(), capture_output=True, text=True)
