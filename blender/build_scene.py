@@ -137,6 +137,7 @@ for d in sc.get("dim", []):
 for w in sc.get("wave", []):
     An[w["name"]] = B.wave(pt(w["a"]), pt(w["b"]), w.get("amp", 0.3), vec(w.get("side", [0, -1, 0])))
 print("built", len(B.all_meshes()), "objects")
+B.export_glb(os.path.join(out, "scene.glb"))
 if sc.get("check", False) or "check" in opt:
     B.check_clashes(min_cm3=float(sc.get("check_min_cm3", 5.0)))
 

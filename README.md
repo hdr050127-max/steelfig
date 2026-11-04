@@ -67,6 +67,8 @@ purlins, bolts) from the style sheet; add a finish per grade there if you want C
 ```
 steelfig build <scene.toml> <out_dir> [--report <dir>] [--quick] [--no-preview] [--png]
 steelfig annotate <scene.toml> <out_dir> [--report <dir>] [--png]     # labels / highlights only, no Blender
+steelfig view <out_dir> [--open]                                        # orbit / zoom the built scene in a browser, read off the camera
+steelfig set-camera <scene.toml> <view> "x,y,z,tx,ty,tz,lens"          # write that camera into the scene
 steelfig render <fig.py> <out_dir> [quick] [cam=x,y,z,tx,ty,tz,lens]
 steelfig sections <query>        # e.g. 360UB, "x8 EA", 150x150, CHS
 steelfig model <file.arc>        # nodes, members, property names of an analysis model

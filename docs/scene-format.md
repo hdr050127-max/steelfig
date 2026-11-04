@@ -107,6 +107,14 @@ only `steelfig annotate scene.toml out/ --report rep/` (no Blender, under a seco
 geometry or the camera changes. A region (tributary area, panel zone) is a `fill` over a polygon of 3D anchors;
 a member is a `highlight`. See `examples/highlight/`.
 
+## Picking the camera in the browser
+
+Every build also writes `out/scene.glb`. `steelfig view out/` serves a page (`viewer.html`) that shows the model
+with the recommended camera of each view, the same lens and frame as the render: drag to orbit, right-drag to
+pan, wheel to zoom (the camera moves, the lens stays). The current camera is shown as `x, y, z, tx, ty, tz,
+lens`; copy it into the scene (`camera = [...]`) or run `steelfig set-camera scene.toml <view> "x,y,…"`, then
+rebuild. Needs internet once for three.js (unpkg).
+
 ## Output
 
 `out/<view>.png` + `.json` (anchors), `rep/images/steelfig/<view>.jpg`, `rep/figures/fig_<name>.tex` (the fragment to

@@ -3,6 +3,8 @@
                                               TOML scene -> renders, fig_<name>.tex, preview PDF (+ PNG for Word);
                                               --check reports members that pass through each other (CLASH lines)
   steelfig annotate <scene.toml> <out_dir> [--report <dir>] [--png]                 redo labels / highlights only (no Blender)
+  steelfig view <out_dir> [--open]                                                   camera picker in the browser (orbit / pan / zoom)
+  steelfig set-camera <scene.toml> <view> "x,y,z,tx,ty,tz,lens"                      write a picked camera into the scene file
   steelfig render <fig.py> <out_dir> [quick] [cam=...]                               run a Python figure script in Blender
   steelfig sections <query>                                                          search the catalogue (e.g. "360UB", "SHS", "x8 EA")
   steelfig model <file.arc|nodes.csv>                                                summarise an analysis model
@@ -35,6 +37,12 @@ def main(argv=None):
         png = "--png" in a
         if png: a.remove("--png")
         scene.annotate_file(a[0], a[1], rep, True, png); return 0
+    if cmd == "view":
+        from steelfig import viewer
+        viewer.serve(a[0], open_browser="--open" in a); return 0
+    if cmd == "set-camera":
+        from steelfig import viewer
+        viewer.set_camera(a[0], a[1], a[2]); return 0
     if cmd == "render":
         from steelfig import scene
         scene.run_blender(a[0], a[1], a[2:]); return 0

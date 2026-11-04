@@ -424,6 +424,18 @@ def section_cut(objs, point, normal, hatch=None, size=50.0):
     delete([cutter])
 
 
+def export_glb(path):
+    """export every mesh to a .glb in Blender's own axes (z up, metres) for the browser viewer; flat colours only."""
+    for o in bpy.context.scene.objects: o.select_set(o.type == 'MESH')
+    kw = dict(filepath=path, export_format='GLB', export_yup=False, export_apply=True, use_selection=True,
+              export_materials='EXPORT', export_image_format='NONE', export_animations=False, export_skins=False, export_lights=False, export_cameras=False)
+    try: bpy.ops.export_scene.gltf(**kw)
+    except TypeError:
+        for k in ("export_image_format", "export_skins", "export_animations", "export_lights", "export_cameras"): kw.pop(k, None)
+        bpy.ops.export_scene.gltf(**kw)
+    print("glb", path)
+
+
 def all_meshes():
     return [o for o in bpy.context.scene.objects if o.type == 'MESH']
 
