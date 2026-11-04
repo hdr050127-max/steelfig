@@ -56,7 +56,8 @@ per_frame = false
       # generated from the member sections: plates, bolt rows, stiffeners, grips; the named members are trimmed
       # to the connection faces automatically (declare them to the column axis / splice point). Anchors:
       # k.ep k.bolt k.bolt2 k.stiff k.face | s.ep s.bolt s.bolt2 s.face | c.capp c.bolt c.ws c.col | b.bp b.ab b.ab2 b.grout b.foot b.col
-      # extra keys: ep_t ep_ext bolt bolt_in row_off stiff_t cap_t plate_t grout footing bolts_in
+      # extra keys: ep_t ep_ext bolt bolt_in row_off stiff_t cap_t plate_t grout footing bolts_in — when left out they
+      # scale with the member depth (connections.defaults: M16/16 plate under 320, M20/20 to 470, M24/25 to 620, M24/32 above)
 [[purlins]] … cleats = true                 # angle cleat + two bolts under every purlin
 [[fly_brace]]  purlins = "pur"  at = [1, 3]  member_depth = "sec('410UB59.7')['d']"  member_bf = "sec('410UB59.7')['b']"
                section = "75x75x6 EA"  both_sides = true  cleat = true     # against the purlin web, cut under the top flange
@@ -72,7 +73,12 @@ check = true           # top level: report solids passing through each other (> 
 
 [[view]]
 name = "knee"
-camera = [x, y, z, tx, ty, tz, lens]     # perspective, or:
+camera = [x, y, z, tx, ty, tz, lens]     # perspective; or camera = "auto" (or leave it out): the camera is chosen to look at
+auto = { focus = ["col", "raf"], fit = [...], dir = [0.6, -1, 0.45], lens = 40, fill = 0.8 }
+                                          # the focus objects (default: the accent ones) from direction `dir`, at the distance
+                                          # that fits the `fit` objects (default: everything) in 80 % of the frame; the result is
+                                          # printed as `camera <view> = [...]` and used by the viewer, so you can adjust it from there
+                                          # or:
 ortho = { look = "+y", scale = 2.6, at = [x, y, z] }    # look: +x -x +y -y -z(plan)
 crop = [p0, p1]                           # fixed crop (ortho views); otherwise the render crops to the meshes
 bounds = ["wave", …]                      # anchors that must stay inside the crop
@@ -82,7 +88,9 @@ draw = [["dim3", "le", "$L_e = 2400$", "below"], ["line", ["wave"], "line width=
 highlight = [{ objects = ["raf"], colour = "#c9553f", alpha = 0.55, outline = 2, dim = 0.35 }]
                                           # tint members on the picture after rendering (from the ID render), outline
                                           # them (px), fade everything else towards white; names or prefixes
-  [[view.label]]  anchor = "col"  text = "…"  dx = 1.3  dy = -0.5  num = 3    # balloon (dx, dy in cm); num repeats a number
+  [[view.label]]  anchor = "col"  text = "…"  [dx = 1.3  dy = -0.5]  [num = 3]
+      # balloon; without dx / dy the position is chosen automatically (off the steel, apart from other balloons, no
+      # crossing leaders, inside the picture); num repeats an earlier number for the same part seen again
 
 [figure]
 name = "knee"          # fig_<name>.tex, preview/prev_<name>.pdf
@@ -97,6 +105,19 @@ image_dir = "images/steelfig"
 `draw` items: `line`, `fill`, `arrow`, `dim`, `dim3`, `angle`, `text`, `grid`, `letter`, `detail`, `cutline`,
 `support`, `raw`, as documented in `steelfig/overlay.py`. Every `dim`/`dim3` text is checked against the model
 distance and a mismatch is printed as a WARNING. A 2D `dim` on a perspective view is also warned.
+
+## Checks run on every build
+
+After the annotation, every view is checked and findings are printed as `overlay WARNING: [view] …`: dimension
+texts against the model, balloons sitting on a member, leaders crossing, balloons or anchors outside the picture,
+balloon numbers without a key line, a dimension line lying on a member. `check = true` adds the clash check of the
+solids. Fix the scene until the build is silent; `overlay.STRICT = True` turns warnings into errors.
+
+## Lines
+
+Outlines come in a hierarchy (`[lines]` in the style): outer contours thicker, internal creases thinner, parts in
+the secondary collection (purlins, girts, sheeting, cleats, or `[[member]] secondary = true`) thinner again, and a
+mild fade with distance from the camera. This is what separates a manual-style drawing from a CAD screenshot.
 
 ## Two-stage work
 
@@ -114,6 +135,18 @@ with the recommended camera of each view, the same lens and frame as the render:
 pan, wheel to zoom (the camera moves, the lens stays). The current camera is shown as `x, y, z, tx, ty, tz,
 lens`; copy it into the scene (`camera = [...]`) or run `steelfig set-camera scene.toml <view> "x,y,…"`, then
 rebuild. Needs internet once for three.js (unpkg).
+
+## Figure sets
+
+`steelfig build-all <folder | set.toml> <out_root> --report <dir>` builds every scene with one style and shared
+`[figure]` defaults (width, key columns), so the figures of a report match; a set file lists `scenes = [...]`
+(above any table header), `style`, and `[defaults]`. The summary lists each figure with its warning count.
+
+## Errors
+
+A mistake in a scene file stops the build with one line, e.g. `ERROR in [[member]] name = "raf": section
+'410UB58' not in the catalogue; near: 410UB53.7, 410UB59.7` or `ERROR in [anchors] col: name 'roof2' is not
+defined (names you can use: …)`.
 
 ## Output
 

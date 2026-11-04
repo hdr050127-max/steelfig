@@ -43,23 +43,16 @@ def run_blender(script, out_dir, extra=()):
     log = r.stdout + r.stderr
     bad = r.returncode != 0 or "Traceback" in log
     lines = [l for l in log.splitlines() if l.strip() and not l.startswith(("Blender ", "Read prefs", "Fra:"))]
-    print("\n".join(lines[-40:] if bad else [l for l in lines if l.startswith(("rendered", "built", "WARNING", "CLASH", "clash check"))]))
+    err = [l for l in lines if l.startswith("ERROR")]
+    if err: sys.exit("\n".join(err))
+    print("\n".join(lines[-40:] if bad else [l for l in lines if l.startswith(("rendered", "built", "WARNING", "CLASH", "clash check", "camera ", "glb"))]))
     if bad: sys.exit("Blender failed on %s" % script)
 
 
 def build(scene_path, out_dir, report_dir=None, quick=False, preview=True, png=False, check=False):
     """geometry + renders (Blender), then annotation (overlay) for every view; returns the figure body.
     png=True also rasterises the preview PDF (300 dpi) for Word / slides users."""
-    sc = load(scene_path); os.makedirs(out_dir, exist_ok=True)
-    base = os.path.dirname(os.path.abspath(scene_path))
-    for md in sc.get("model", []):                                   # model paths are relative to the scene file
-        if not os.path.isabs(md["path"]): md["path"] = os.path.join(base, md["path"])
-    if sc.get("style"): os.environ["STEELFIG_STYLE"] = sc["style"] if os.path.isabs(sc["style"]) or "/" not in sc["style"] else os.path.join(base, sc["style"])
-    spec = os.path.join(out_dir, "scene.json"); json.dump(sc, open(spec, "w"), indent=1)
-    run_blender(os.path.join(ROOT, "blender", "build_scene.py"), out_dir, [spec] + (["quick"] if quick else []) + (["check=1"] if check else []))
-    body = annotate(sc, out_dir, report_dir or out_dir, preview or png)
-    if png: to_png(os.path.join(report_dir or out_dir, "preview", "prev_%s.pdf" % (sc.get("figure", {}).get("name") or "figure")))
-    return body
+    return build_from(load(scene_path), os.path.dirname(os.path.abspath(scene_path)), out_dir, report_dir, quick, preview, png, check)
 
 
 def to_png(pdf, dpi=300):
@@ -99,9 +92,27 @@ def annotate(sc, out_dir, rep, preview=True):
             P.highlight(hl["objects"], hl.get("colour", "#c9553f"), hl.get("alpha", 0.45), hl.get("outline", 0), hl.get("dim", 0.0),
                         out=os.path.join(rep, img_dir, "%s_hl%s.jpg" % (vn, i or "")))
             P.png = os.path.join(img_dir, "%s_hl%s.jpg" % (vn, i or ""))
-        labels = [(l["anchor"], l.get("text", ""), l.get("dx", 0.8), l.get("dy", 0.8)) + ((l["num"],) if "num" in l else ()) for l in v.get("label", [])]
+        labels = [(l["anchor"], l.get("text", ""), l.get("dx"), l.get("dy")) + ((l["num"],) if "num" in l else ()) for l in v.get("label", [])]
         draw = [tuple(d) for d in v.get("draw", [])]
-        tik, key = O.balloon(P, labels, draw, start=len(key_all) + 1 if v.get("continue_numbers", True) else 1)
+        from steelfig import layout as LY
+        occ = LY.Occupancy(P)
+        fixed = []
+        for d in draw:                                                      # keep balloons away from dimension texts
+            if d[0] == "dim3":
+                try: a2, b2 = P.pts(d[1] + "_a2")[0], P.pts(d[1] + "_b2")[0]; fixed.append(((a2[0] + b2[0]) / 2, (a2[1] + b2[1]) / 2))
+                except KeyError: pass
+        if any(l[2] is None or l[3] is None for l in labels):
+            labels = LY.place_balloons(P, labels, occ, fixed=fixed)
+            auto = [(l[0], l[2], l[3]) for l in labels]
+            print("auto balloons [%s]: %s" % (vn, ", ".join("%s (%+.1f, %+.1f)" % a for a in auto)))
+        start = len(key_all) + 1 if v.get("continue_numbers", True) else 1
+        tik, key = O.balloon(P, labels, draw, start=start)
+        # renumber for the check the same way balloon() did
+        numbered, n = [], start - 1
+        for l in labels:
+            if len(l) > 4: numbered.append(tuple(l))
+            else: n += 1; numbered.append(tuple(l[:4]) + (n,))
+        for f in LY.check(P, numbered, draw, key, occ): O.warn("[%s] %s" % (vn, f))
         key_all += key
         part = O.captioned(tik, v["caption"], P.W + 0.4) if v.get("caption") else tik
         parts.append((part, P))
@@ -126,4 +137,54 @@ def annotate(sc, out_dir, rep, preview=True):
         pdf = O.preview(body, os.path.join(rep, "preview"), name, cwd=rep, width_cm=W + 1)
         print("preview", pdf)
     if O.warnings(): print("%d warning(s): check the dimensions above" % len(O.warnings()))
+    return body
+
+
+def build_all(target, out_root, report_dir=None, quick=False, check=False):
+    """build every scene of a figure set with one style and shared defaults, so the figures of a report match.
+    target: a folder (every *.toml in it) or a set file:
+        style = "default"                 # applied to every scene
+        [defaults]  width_cm = 15.6  key_cols = 2      # [figure] values a scene does not set itself
+        scenes = ["knee/knee.toml", "connections/connections.toml"]
+    Prints one line per figure with its warnings and clashes."""
+    import glob
+    if os.path.isdir(target):
+        paths, st, defaults = sorted(glob.glob(os.path.join(target, "**", "*.toml"), recursive=True)), None, {}
+    else:
+        S = load(target); base = os.path.dirname(os.path.abspath(target))
+        defaults = S.get("defaults", {}); scenes = S.get("scenes") or defaults.pop("scenes", None)
+        if not scenes: sys.exit("set file: no `scenes = [...]` list (put it above any [table] header)")
+        paths = [p if os.path.isabs(p) else os.path.join(base, p) for p in scenes]; st = S.get("style")
+    rows = []
+    for p in paths:
+        sc = load(p); name = sc.get("figure", {}).get("name") or os.path.splitext(os.path.basename(p))[0]
+        if st: sc["style"] = st
+        sc.setdefault("figure", {})
+        for k, v in defaults.items(): sc["figure"].setdefault(k, v)
+        od = os.path.join(out_root, name); os.makedirs(od, exist_ok=True)
+        tmp = os.path.join(od, "scene_set.toml")
+        import tomllib  # noqa
+        # write the merged scene back as TOML-free JSON path: build() expects a TOML, so keep the original and pass overrides
+        from steelfig import overlay as O
+        O._warn.clear()
+        try:
+            build_from(sc, os.path.dirname(os.path.abspath(p)), od, report_dir or od, quick, True, False, check)
+            rows.append((name, "ok", len(O.warnings())))
+        except SystemExit as e:
+            rows.append((name, "FAILED: %s" % e, 0))
+    print("\nfigure set:")
+    for n, st_, w in rows: print("  %-20s %s%s" % (n, st_, "  (%d warning%s)" % (w, "s" if w != 1 else "") if w else ""))
+    return rows
+
+
+def build_from(sc, base, out_dir, report_dir, quick=False, preview=True, png=False, check=False):
+    """build() for an already-loaded scene dict (paths relative to `base`)."""
+    os.makedirs(out_dir, exist_ok=True)
+    for md in sc.get("model", []):
+        if not os.path.isabs(md["path"]): md["path"] = os.path.join(base, md["path"])
+    if sc.get("style"): os.environ["STEELFIG_STYLE"] = sc["style"] if os.path.isabs(sc["style"]) or "/" not in sc["style"] else os.path.join(base, sc["style"])
+    spec = os.path.join(out_dir, "scene.json"); json.dump(sc, open(spec, "w"), indent=1)
+    run_blender(os.path.join(ROOT, "blender", "build_scene.py"), out_dir, [spec] + (["quick"] if quick else []) + (["check=1"] if check else []))
+    body = annotate(sc, out_dir, report_dir or out_dir, preview or png)
+    if png: to_png(os.path.join(report_dir or out_dir, "preview", "prev_%s.pdf" % (sc.get("figure", {}).get("name") or "figure")))
     return body

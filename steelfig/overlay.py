@@ -57,7 +57,7 @@ class Pic:
         file: the image's real path on disk (needed for highlight), default = png resolved from cwd."""
         J = json.load(open(json_path)); rx, ry = J["res"]
         self.png, self.A, self.W = png, J["anchors"], width_cm; self.H = width_cm * ry / rx
-        self.A3 = J.get("anchors3d", {}); self.ortho = J.get("ortho", False); self.ids = J.get("ids", {})
+        self.A3 = J.get("anchors3d", {}); self.ortho = J.get("ortho", False); self.ids = J.get("ids", {}); self.background = J.get("background", [])
         self.file = file or png; self.idpng = json_path[:-5] + "_id.png"
 
     def objects(self, names):

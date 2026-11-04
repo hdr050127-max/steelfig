@@ -92,3 +92,9 @@ sheet = "galvanised"
 sky = "#ffffff"
 ground = "#b9bcc0"
 strength = 0.95
+
+[lines]                     # outline hierarchy (multiples of render.line_width)
+contour = 1.25              # outer silhouette / contour of each part
+crease = 0.6                # internal fold lines (flange-web junctions)
+secondary = 0.65            # parts in the "secondary" collection: purlins, girts, sheeting, cleats
+fade = 0.7                  # thickness multiplier at the far end of the scene (1 = no depth fade)

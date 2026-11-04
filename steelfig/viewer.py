@@ -68,7 +68,11 @@ def views_of(out_dir):
     except Exception: pass
     vs = []
     for v in sc.get("view", []):
-        if "camera" in v: vs.append(dict(name=v["name"], cam=v["camera"], res=v.get("res") or res))
+        cam = None
+        jp = os.path.join(out_dir, v["name"] + ".json")
+        if os.path.exists(jp): cam = json.load(open(jp)).get("camera")
+        if cam is None and isinstance(v.get("camera"), list): cam = v["camera"]
+        if cam: vs.append(dict(name=v["name"], cam=cam, res=v.get("res") or res))
     return vs
 
 

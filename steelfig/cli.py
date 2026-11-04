@@ -2,6 +2,8 @@
   steelfig build <scene.toml> <out_dir> [--report <dir>] [--quick] [--no-preview] [--png] [--check]
                                               TOML scene -> renders, fig_<name>.tex, preview PDF (+ PNG for Word);
                                               --check reports members that pass through each other (CLASH lines)
+  steelfig build-all <folder | set.toml> <out_root> [--report <dir>] [--quick] [--check]
+                                              every scene of a figure set with one style and shared [figure] defaults
   steelfig annotate <scene.toml> <out_dir> [--report <dir>] [--png]                 redo labels / highlights only (no Blender)
   steelfig view <out_dir> [--open]                                                   camera picker in the browser (orbit / pan / zoom)
   steelfig set-camera <scene.toml> <view> "x,y,z,tx,ty,tz,lens"                      write a picked camera into the scene file
@@ -30,6 +32,13 @@ def main(argv=None):
         chk = "--check" in a
         if chk: a.remove("--check")
         scene.build(a[0], a[1], rep, quick, prev, png, chk); return 0
+    if cmd == "build-all":
+        from steelfig import scene
+        rep = None
+        if "--report" in a: i = a.index("--report"); rep = a[i + 1]; del a[i:i + 2]
+        quick = "--quick" in a; chk = "--check" in a
+        a = [x for x in a if not x.startswith("--")]
+        scene.build_all(a[0], a[1], rep, quick, chk); return 0
     if cmd == "annotate":
         from steelfig import scene
         rep = None

@@ -52,6 +52,15 @@ The preamble needs `\usepackage{tikz,graphicx,amsmath}`, `\usetikzlibrary{arrows
 `\definecolor{acc}{rgb}{0.62,0.16,0.10}` and the balloon macro from `steelfig/overlay.py` (`PRE`).
 Word users: use `preview/prev_<name>.png` from `--png`.
 
+## What the build does for you
+
+Balloons without `dx`/`dy` are placed automatically off the steel (the ID render says where the steel is), apart
+from each other and without crossing leaders. A view without a camera gets one that looks at the accent parts and
+fits everything in the frame; adjust it in the browser (`steelfig view`). Every build checks dimension texts
+against the model, balloons on members, crossing leaders, parts outside the picture and key numbering, and prints
+what it found. Outlines are drawn in a hierarchy (contour / crease / secondary / depth fade). Connection
+proportions scale with the member depth. Errors in a scene file come back as one plain line.
+
 ## Connections, clashes, finishes
 
 Standard connections are generated from the member sections (`[[connection]] type = "knee" | "splice" | "cap" |
@@ -66,6 +75,7 @@ purlins, bolts) from the style sheet; add a finish per grade there if you want C
 
 ```
 steelfig build <scene.toml> <out_dir> [--report <dir>] [--quick] [--no-preview] [--png]
+steelfig build-all <folder | set.toml> <out_root> [--report <dir>] [--quick] [--check]   # a report's figures, one style
 steelfig annotate <scene.toml> <out_dir> [--report <dir>] [--png]     # labels / highlights only, no Blender
 steelfig view <out_dir> [--open]                                        # orbit / zoom the built scene in a browser, read off the camera
 steelfig set-camera <scene.toml> <view> "x,y,z,tx,ty,tz,lens"          # write that camera into the scene

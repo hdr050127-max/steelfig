@@ -231,7 +231,15 @@ def isec(name, p0, p1, sec, material, up=(0, 0, 1), cut0=None, cut1=None, top=Fa
     return prism(name, p0, p1, [(u + o, v) for u, v in prof], material, up, cut0, cut1)
 
 
-def member(name, p0, p1, designation, material, up=(0, 0, 1), cut0=None, cut1=None, align="centroid", flip=False, min_t=0.003):
+def secondary(ob):
+    """mark an object as secondary (purlins, girts, sheeting): thinner outlines, see setup()."""
+    col = bpy.data.collections.get("secondary") or bpy.data.collections.new("secondary")
+    if col.name not in bpy.context.scene.collection.children: bpy.context.scene.collection.children.link(col)
+    for c in list(ob.users_collection): c.objects.unlink(ob)
+    col.objects.link(ob); return ob
+
+
+def member(name, p0, p1, designation, material, up=(0, 0, 1), cut0=None, cut1=None, align="centroid", flip=False, min_t=0.003, secondary_=False):
     """any catalogue section on the line p0 -> p1. up: direction of the profile's u axis (web of an I section or
     channel, long leg of an angle, depth of an RHS, web of a Z/C purlin). align: where the line sits on the profile,
     "centroid" (default), "top" / "bottom" (the line is the top / bottom face, for rafters and purlins on a roof
@@ -250,8 +258,9 @@ def member(name, p0, p1, designation, material, up=(0, 0, 1), cut0=None, cut1=No
         ob = _tube(name, p0, p1, fix(P["outer"]), fix(P["inner"]), material, Vector(up), cut0, cut1)
         if P.get("round"):
             for f in ob.data.polygons: f.use_smooth = True
-        return ob
-    return prism(name, p0, p1, fix(P["pts"]), material, Vector(up), cut0, cut1)
+    else:
+        ob = prism(name, p0, p1, fix(P["pts"]), material, Vector(up), cut0, cut1)
+    return secondary(ob) if secondary_ else ob
 
 
 def zsec(name, p0, p1, material, up, h=0.25, f=0.075, t=0.003, flip=False):
@@ -520,13 +529,74 @@ def setup(cam_loc, target, lens=40, res=None, ortho=None, line=None, quick=False
     sc.render.line_thickness_mode = 'ABSOLUTE'; sc.render.line_thickness = line
     vl = sc.view_layers[0]; fs = vl.freestyle_settings
     fs.crease_angle = math.radians(135)
-    ls = fs.linesets.new("lines")
-    ls.select_by_visibility = True; ls.visibility = 'VISIBLE'
-    ls.select_by_edge_types = True
-    ls.select_silhouette = True; ls.select_border = True; ls.select_crease = True; ls.select_external_contour = True
-    ink = bpy.data.linestyles.new("ink"); ink.color = line_color; ink.thickness = line; ink.chaining = 'PLAIN'
-    for l in fs.linesets: l.linestyle = ink
+    LN = ST.get("lines", {}); sec_col = bpy.data.collections.get("secondary")
+    # depth range for the fade: distances of all mesh vertices from the camera
+    ds = []
+    for ob in sc.objects:
+        if ob.type == 'MESH':
+            for c in ob.bound_box: ds.append((ob.matrix_world @ Vector(c) - Vector(cam_loc)).length)
+    d0, d1 = (min(ds), max(ds)) if ds else (1.0, 10.0)
+
+    def lineset(name, kinds, thick, collection=None, exclusive=False):
+        ls = fs.linesets.new(name)
+        ls.select_by_visibility = True; ls.visibility = 'VISIBLE'; ls.select_by_edge_types = True
+        ls.select_silhouette = "silhouette" in kinds; ls.select_border = "border" in kinds
+        ls.select_crease = "crease" in kinds; ls.select_external_contour = "contour" in kinds
+        if collection is not None:
+            ls.select_by_collection = True; ls.collection = collection; ls.collection_negation = 'EXCLUSIVE' if exclusive else 'INCLUSIVE'
+        st = bpy.data.linestyles.new("ls_" + name); st.color = line_color; st.thickness = thick; st.chaining = 'PLAIN'
+        if LN.get("fade", 1.0) < 1.0 and d1 > d0:
+            m = st.thickness_modifiers.new("fade", 'DISTANCE_FROM_CAMERA'); m.range_min, m.range_max = d0, d1
+            m.value_min, m.value_max = 1.0, LN["fade"]; m.blend = 'MULTIPLY'
+        ls.linestyle = st; return ls
+
+    c_, k_, s_ = LN.get("contour", 1.0), LN.get("crease", 1.0), LN.get("secondary", 1.0)
+    if sec_col is not None and len(sec_col.objects):
+        lineset("contour", ("contour", "silhouette", "border"), line * c_, sec_col, exclusive=True)
+        lineset("crease", ("crease",), line * k_, sec_col, exclusive=True)
+        lineset("contour2", ("contour", "silhouette", "border"), line * c_ * s_, sec_col)
+        lineset("crease2", ("crease",), line * k_ * s_, sec_col)
+    else:
+        lineset("contour", ("contour", "silhouette", "border"), line * c_)
+        lineset("crease", ("crease",), line * k_)
     return camo
+
+
+def auto_camera(focus=None, fit=None, direction=(0.6, -1.0, 0.45), lens=40.0, fill=0.8, aspect=None, quick=False, line=None):
+    """recommend a camera: look at the centre of the `focus` objects (default: accent-material objects, else all)
+    from `direction` (unit vector from the target towards the camera), at the distance that fits the `fit`
+    objects (default: all meshes) within `fill` of the frame. Returns (cam_loc, target, lens) and leaves the
+    camera set up (setup() has been called)."""
+    objs = all_meshes()
+    if focus is None:
+        focus = [o for o in objs if o.data.materials and o.data.materials[0].name in ("finish_accent", "accent")] or objs
+    fit = fit or objs
+    def bbox(obs):
+        pts = [o.matrix_world @ Vector(c) for o in obs for c in o.bound_box]
+        return Vector(map(min, zip(*pts))), Vector(map(max, zip(*pts)))
+    f0, f1 = bbox(focus); target = (f0 + f1) / 2
+    a0, a1 = bbox(fit); d = Vector(direction).normalized(); dist = max((a1 - a0).length, 1.0) * 1.2
+    camo = setup(cam_loc=tuple(target + d * dist), target=tuple(target), lens=lens, quick=quick, line=line)
+    sc = bpy.context.scene; dg = bpy.context.evaluated_depsgraph_get(); bpy.context.view_layer.update()
+    for _ in range(8):
+        us, vs = [], []
+        for ob in fit:
+            me = ob.evaluated_get(dg).to_mesh()
+            for v in me.vertices:
+                co = world_to_camera_view(sc, camo, ob.matrix_world @ v.co); us.append(co.x); vs.append(co.y)
+        w, h = max(us) - min(us), max(vs) - min(vs)
+        k = max(w, h) / fill
+        cu, cv = (max(us) + min(us)) / 2 - 0.5, (max(vs) + min(vs)) / 2 - 0.5     # frame-centre offset of the fit
+        # shift target sideways so the fit is centred, then scale the distance
+        view = -d                                                             # the camera looks along -d
+        right = view.cross(Vector((0, 0, 1))).normalized(); upv = right.cross(view).normalized()
+        span = 2 * dist * (18 / lens)                                         # horizontal frame width at the target (sensor 36 mm)
+        target = target + right * (cu * span) + upv * (cv * span / (sc.render.resolution_x / sc.render.resolution_y))
+        dist = dist * min(3.0, max(0.3, k))
+        camo.location = target + d * dist; camo.rotation_euler = (-d).to_track_quat('-Z', 'Y').to_euler()
+        bpy.context.view_layer.update()                                       # world_to_camera_view reads matrix_world
+        if abs(k - 1) < 0.02 and abs(cu) < 0.01 and abs(cv) < 0.01: break
+    return [round(v, 3) for v in camo.location] + [round(v, 3) for v in target] + [lens]
 
 
 def ortho_view(camo, look, scale, at, dist=20.0):
@@ -611,7 +681,8 @@ def render(out_dir, name, anchors=None, margin=0.02, bounds_extra=(), crop_pts=N
     a3 = {k: ([list(q) for q in p] if isinstance(p, list) and p and not isinstance(p[0], (int, float)) else list(p))
           for k, p in ((k, list(p) if not isinstance(p, Vector) else list(p)) for k, p in anchors.items())}
     idmap = render_ids(os.path.join(out_dir, name + "_id.png")) if ids else {}
-    json.dump(dict(res=res, anchors=out, anchors3d=a3, ortho=sc.camera.data.type == 'ORTHO', ids=idmap), open(os.path.join(out_dir, name + ".json"), "w"), indent=1)
+    bg = [o.name for o in sc.objects if o.type == 'MESH' and o.data.materials and o.data.materials[0].name in ("conc", "grout", "sheet", "finish_galvanised") and not o.name.startswith(("pur", "girt"))]
+    json.dump(dict(res=res, anchors=out, anchors3d=a3, ortho=sc.camera.data.type == 'ORTHO', ids=idmap, background=bg), open(os.path.join(out_dir, name + ".json"), "w"), indent=1)
     print("rendered", os.path.join(out_dir, name + ".png"), res)
 
 

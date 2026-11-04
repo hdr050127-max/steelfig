@@ -15,6 +15,22 @@ from steelfig import sections as SEC_DB
 X = Vector((1, 0, 0)); Y = Vector((0, 1, 0)); Z = Vector((0, 0, 1))
 
 
+def defaults(depth):
+    """connection proportions by the depth (m) of the connected beam / column, following common Australian
+    practice (ASI / TTW standard connections): bolt size, end-plate thickness, bolt gauge from the web,
+    row distance from the flange, stiffener and base-plate thickness, holding-down bolt."""
+    if depth < 0.32:   return dict(bolt="M16", ep_t=0.016, bolt_in=0.040, row_off=0.045, stiff_t=0.010, cap_t=0.016, plate_t=0.020, hd_bolt="M20")
+    if depth < 0.47:   return dict(bolt="M20", ep_t=0.020, bolt_in=0.045, row_off=0.055, stiff_t=0.012, cap_t=0.020, plate_t=0.025, hd_bolt="M24")
+    if depth < 0.62:   return dict(bolt="M24", ep_t=0.025, bolt_in=0.050, row_off=0.060, stiff_t=0.016, cap_t=0.020, plate_t=0.032, hd_bolt="M24")
+    return dict(bolt="M24", ep_t=0.032, bolt_in=0.055, row_off=0.065, stiff_t=0.020, cap_t=0.025, plate_t=0.040, hd_bolt="M30")
+
+
+def _fill(kw, depth):
+    """resolve None values in kw from defaults(depth)."""
+    d = defaults(depth)
+    return {k: (d[k] if v is None and k in d else v) for k, v in kw.items()}
+
+
 def _sec(d):
     return SEC_DB.profile(d)
 
@@ -29,14 +45,16 @@ def _bolt_group(name, centre, axis, up, side, rows, cols, bolt, grip, mat):
 
 
 # ---------------------------------------------------------------- knee: rafter end plate bolted to the column flange
-def knee(name, line, x_col, col, col_sec, raf, raf_sec, M, side=1, ep_t=0.020, ep_ext=0.075, bolt="M20", stiff_t=0.012,
-         diagonal=False, bolt_in=0.045, row_off=0.055):
+def knee(name, line, x_col, col, col_sec, raf, raf_sec, M, side=1, ep_t=None, ep_ext=0.075, bolt=None, stiff_t=None,
+         diagonal=False, bolt_in=None, row_off=None):
     """rigid knee: the rafter (top on `line`) ends on an extended end plate bolted to the inside flange of the
     column at x_col (web along x); bolts in two columns 45 mm off the web, a row above and below each rafter flange;
     column stiffeners in line with the rafter flanges; optional diagonal panel-zone stiffener. side = +1 when the
     rafter runs towards +x from the column."""
     C, R = _sec(col_sec), _sec(raf_sec)
     dC, tfC, twC, bfC = C["d"], C["tf"], C["tw"], C["b"]; dR, tfR, bfR = R["d"], R["tf"], R["b"]
+    g = _fill(dict(ep_t=ep_t, bolt=bolt, stiff_t=stiff_t, bolt_in=bolt_in, row_off=row_off), dR)
+    ep_t, bolt, stiff_t, bolt_in, row_off = g["ep_t"], g["bolt"], g["stiff_t"], g["bolt_in"], g["row_off"]
     xf = x_col + side * dC / 2                           # inside flange face of the column
     xp = xf + side * ep_t                                # rafter end face (plate face)
     n = line.normal(x_col + side * 0.1); t = line.tangent(x_col + side * 0.1)
@@ -64,11 +82,13 @@ def knee(name, line, x_col, col, col_sec, raf, raf_sec, M, side=1, ep_t=0.020, e
 
 
 # ---------------------------------------------------------------- splice: two end plates back to back on the roof line
-def splice(name, line, x, a, a_sec, b, b_sec, M, ep_t=0.020, ep_ext=0.05, bolt="M20", bolt_in=0.045, row_off=0.050):
+def splice(name, line, x, a, a_sec, b, b_sec, M, ep_t=None, ep_ext=0.05, bolt=None, bolt_in=None, row_off=None):
     """bolted end-plate splice at horizontal position x between member a (ends there) and member b (starts
     there); plates span the deeper section; bolt rows above and below each flange of the shallower one."""
     A_, B_ = _sec(a_sec), _sec(b_sec)
     n = line.normal(x); dmax = max(A_["d"], B_["d"]); dmin = min(A_["d"], B_["d"]); tf = min(A_["tf"], B_["tf"]); bf = max(A_["b"], B_["b"])
+    g = _fill(dict(ep_t=ep_t, bolt=bolt, bolt_in=bolt_in, row_off=row_off), dmin)
+    ep_t, bolt, bolt_in, row_off = g["ep_t"], g["bolt"], g["bolt_in"], g["row_off"]
     cuts = {a: {"cut1": (line.at(x - ep_t), X)}, b: {"cut0": (line.at(x + ep_t), X)}}
     anchors = {}
 
@@ -84,11 +104,12 @@ def splice(name, line, x, a, a_sec, b, b_sec, M, ep_t=0.020, ep_ext=0.05, bolt="
 
 
 # ---------------------------------------------------------------- cap: rafter continuous over a column, cap plate
-def cap(name, line, x, col, col_sec, raf_sec, M, cap_t=0.020, bolt="M20", stiff_t=0.010):
+def cap(name, line, x, col, col_sec, raf_sec, M, cap_t=None, bolt=None, stiff_t=None):
     """pinned cap: the rafter (continuous) sits on a cap plate on top of the column at x; bolts just outside
     the column walls (SHS) or flanges (UC); rafter web stiffeners over the column walls."""
     C, R = _sec(col_sec), _sec(raf_sec); n = line.normal(x)
     dR, tfR, twR, bfR = R["d"], R["tf"], R["tw"], R["b"]
+    g = _fill(dict(cap_t=cap_t, bolt=bolt, stiff_t=stiff_t), dR); cap_t, bolt, stiff_t = g["cap_t"], g["bolt"], g["stiff_t"]
     cw = C["b"] if C["row"]["type"] in ("SHS", "RHS", "CHS") else C["d"]        # column size along x
     tt = line.tangent(x)
     under = line.at(x) - n * dR                                                  # underside of the rafter over the column axis
@@ -110,9 +131,10 @@ def cap(name, line, x, col, col_sec, raf_sec, M, cap_t=0.020, bolt="M20", stiff_
 
 
 # ---------------------------------------------------------------- base: pinned base plate with four holding-down bolts
-def base(name, x, col, col_sec, M, z0=0.0, plate_t=0.020, grout=0.040, bolt="M24", footing=(1.3, 0.9, 0.6), bolts_in=0.060):
+def base(name, x, col, col_sec, M, z0=0.0, plate_t=None, grout=0.040, bolt=None, footing=(1.3, 0.9, 0.6), bolts_in=0.060):
     """base plate on grout on a concrete footing; four anchor bolts 60 mm inside the flange faces (pinned)."""
     C = _sec(col_sec); dC, bfC = C["d"], C["b"]
+    g = defaults(dC); plate_t = plate_t or g["plate_t"]; bolt = bolt or g["hd_bolt"]
     cuts = {col: {"cut0": (Vector((x, 0, z0 + grout + plate_t)), Z)}}
     anchors = {}
 
@@ -121,7 +143,7 @@ def base(name, x, col, col_sec, M, z0=0.0, plate_t=0.020, grout=0.040, bolt="M24
         objs, top = B_base(name, Vector((x, 0, z0)), (dC + 0.14, bfC + 0.10), plate_t, M, grout, bolts=[(sx * (dC / 2 - bolts_in), sy * 0.06) for sx in (-1, 1) for sy in (-1, 1)],
                            bolt_dia=SEC_DB.bolt(bolt)["d"])
         anchors.update(bp=(x + dC / 2 + 0.05, -bfC / 2 - 0.05, z0 + grout + plate_t / 2), ab=(x + dC / 2 - bolts_in, -0.06, top.z + 0.03), ab2=(x - dC / 2 + bolts_in, -0.06, top.z + 0.03),
-                       grout=(x + dC / 2 + 0.07, -bfC / 2 - 0.05, z0 + grout / 2), foot=(x + 0.55, -0.45, z0 - 0.3), col=(x + dC / 2, -bfC / 2 + 0.02, z0 + 1.1))
+                       grout=(x + dC / 2 + 0.07, -bfC / 2 - 0.05, z0 + grout / 2), foot=(x + 0.25, -footing[1] / 2, z0 - 0.25), col=(x + dC / 2, -bfC / 2 + 0.02, z0 + 1.1))
     return dict(cuts=cuts, build=build, anchors=anchors)
 
 

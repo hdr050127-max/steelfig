@@ -2,6 +2,7 @@
 #   steelfig build examples/knee/knee.toml /tmp/knee_out --report /tmp/knee_rep
 title = "West knee: what restrains the designed members"
 check = true                               # report members passing through each other (> 5 cm3)
+# balloons carry no dx/dy: placed automatically off the steel; add dx/dy to a label to pin it
 
 [[line]]                                   # rafter TOP line: 4 deg pitch from the column face at z = 6.0
 name = "roof"
@@ -93,43 +94,27 @@ draw = [["line", ["wave"], "line width=0.8pt, densely dashed, acc"], ["dim3", "l
   [[view.label]]
   anchor = "col"
   text = "460UB82.1 column (designed)"
-  dx = 1.3
-  dy = -0.5
   [[view.label]]
   anchor = "rafter"
   text = "410UB59.7 rafter"
-  dx = 0.4
-  dy = -1.0
   [[view.label]]
   anchor = "k.ep"
   text = "bolted end plate"
-  dx = 1.0
-  dy = -2.3
   [[view.label]]
   anchor = "k.bolt"
   text = "M20 bolts above and below each rafter flange"
-  dx = 1.1
-  dy = 0.4
   [[view.label]]
   anchor = "k.stiff"
   text = "column stiffeners in line with the rafter flanges"
-  dx = -1.3
-  dy = -0.3
   [[view.label]]
   anchor = "purlin"
   text = "Z25019 purlins at 1200 on the top flange"
-  dx = -0.5
-  dy = 0.8
   [[view.label]]
   anchor = "girt"
   text = "Z25019 girt on the outside flange"
-  dx = -0.6
-  dy = 0.5
   [[view.label]]
   anchor = "fly"
   text = "fly brace (both sides) to the bottom flange"
-  dx = 0.9
-  dy = -0.6
 
 [[view]]
 name = "knee_elev"
@@ -141,8 +126,6 @@ draw = [["dim", "rt", "rb", "406", 0.6, "right"], ["dim", "ct", "cb", "460", -0.
   [[view.label]]
   anchor = "I"
   text = ""
-  dx = -0.9
-  dy = 0.6
   num = 1
 
 [figure]

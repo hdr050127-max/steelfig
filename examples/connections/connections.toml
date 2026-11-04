@@ -1,5 +1,6 @@
 # The four standard connections of a portal frame, each generated from the member sections by one [[connection]]
 # line: (a) rigid knee, (b) bolted end-plate splice, (c) pinned cap plate on an SHS column, (d) pinned base plate.
+# Balloons have no dx/dy: steelfig places them off the steel itself.
 # Every part is placed by the generator (plate sizes, bolt rows, stiffeners, grips) and the members are trimmed
 # to the connection faces, so the parts touch without passing through each other (check = true proves it).
 #   steelfig build examples/connections/connections.toml /tmp/cn_out --report /tmp/cn_rep --quick
@@ -108,62 +109,42 @@ caption = "(a) West knee: rigid"
   [[view.label]]
   anchor = "m.colA"
   text = "610UB113 column"
-  dx = -0.5
-  dy = -0.9
   [[view.label]]
   anchor = "m.haunchA"
   text = "530UB92.4 haunch"
-  dx = 0.2
-  dy = -0.9
   [[view.label]]
   anchor = "kn.ep"
   text = "end plate"
-  dx = 1.0
-  dy = -0.6
   [[view.label]]
   anchor = "kn.bolt"
   text = "bolts above and below each haunch flange"
-  dx = 0.9
-  dy = 0.3
   [[view.label]]
   anchor = "kn.bolt2"
   text = ""
-  dx = 1.0
-  dy = 0.05
   num = 4
   [[view.label]]
   anchor = "kn.stiff"
   text = "stiffeners in line with the haunch flanges"
-  dx = -0.9
-  dy = -0.4
 
 [[view]]
 name = "cn_splice"
 camera = [6.63, -2.9, 9.85, 6.278, 0, 10.53, 45]
-crop = [[5.2, -0.3, 9.9], [7.4, 0.3, 11.15]]
+crop = [[5.0, 0, 9.75], [7.65, 0, 11.3]]
 height_cm = 5.4
 max_width_cm = 7.4
 caption = "(b) Haunch to mid rafter splice: continuous"
   [[view.label]]
   anchor = "m.hA"
   text = "530UB92.4 haunch"
-  dx = -0.4
-  dy = -0.8
   [[view.label]]
   anchor = "m.rA"
   text = "360UB50.7 mid rafter"
-  dx = 0.4
-  dy = 0.8
   [[view.label]]
   anchor = "sp.ep"
   text = "two bolted end plates"
-  dx = 0.9
-  dy = -0.4
   [[view.label]]
   anchor = "sp.bolt"
   text = "bolts above and below each flange of the 360UB"
-  dx = 0.9
-  dy = 0.4
 
 [[view]]
 name = "cn_cap"
@@ -175,33 +156,23 @@ caption = "(c) Rafter over an SHS column: pinned"
   [[view.label]]
   anchor = "m.hB"
   text = "530UB82.0 haunch, continuous over the column"
-  dx = 0.3
-  dy = 0.8
   [[view.label]]
   anchor = "cp.col"
   text = "200$\\times$200$\\times$9.0 SHS"
-  dx = 0.8
-  dy = 0.0
   [[view.label]]
   anchor = "cp.capp"
   text = "cap plate"
-  dx = -0.9
-  dy = -0.3
   [[view.label]]
   anchor = "cp.bolt"
   text = "bolts outside the tube walls"
-  dx = 0.9
-  dy = -0.5
   [[view.label]]
   anchor = "cp.ws"
   text = "web stiffeners over the tube walls"
-  dx = -0.5
-  dy = 0.8
 
 [[view]]
 name = "cn_base"
 camera = [52.1, -2.9, 1.9, 50.05, 0, 0.35, 42]
-crop = [[49.2, -0.6, -0.7], [50.9, 0.6, 1.7]]
+crop = [[49.0, -0.5, -0.8], [51.1, -0.5, 1.8]]
 height_cm = 5.4
 max_width_cm = 7.4
 caption = "(d) West column base: pinned"
@@ -209,34 +180,22 @@ draw = [["dim3", "lev", "487", "below"]]
   [[view.label]]
   anchor = "bs.col"
   text = "610UB113 column"
-  dx = 0.8
-  dy = 0.0
   [[view.label]]
   anchor = "bs.bp"
   text = "base plate"
-  dx = 0.9
-  dy = 0.2
   [[view.label]]
   anchor = "bs.ab"
   text = "four M24 anchor bolts inside the flanges"
-  dx = 0.9
-  dy = 0.7
   [[view.label]]
   anchor = "bs.ab2"
   text = ""
-  dx = -0.7
-  dy = 0.8
   num = 3
   [[view.label]]
   anchor = "bs.grout"
   text = "40 mm grout pad"
-  dx = 0.9
-  dy = -0.3
   [[view.label]]
   anchor = "bs.foot"
   text = "concrete footing"
-  dx = 0.8
-  dy = -0.5
 
 [figure]
 name = "connections"
