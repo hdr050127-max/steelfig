@@ -72,7 +72,7 @@ for cn in sc.get("connection", []):
   with _at('[[connection]] type = "%s" name = "%s"' % (cn.get("type"), cn.get("name", cn.get("type")))):
     typ = cn["type"]; nm = cn.get("name", typ); L = lines[cn["line"]] if "line" in cn else None
     kw = {k: (num(v) if isinstance(v, str) and k not in ("bolt",) and k.endswith(("_t", "_ext", "_in", "_off", "x", "y", "z0")) else v) for k, v in cn.items()
-          if k not in ("type", "name", "line", "column", "rafter", "a", "b", "member", "primary", "secondary")}
+          if k not in ("type", "name", "line", "column", "rafter", "a", "b", "member", "primary", "secondary", "a0", "a1", "b0", "b1", "normal", "along", "host", "section")}
     if typ == "knee":
         conns.append(CN.knee(nm, L, num(cn["x"]), cn["column"], msec[cn["column"]], cn["rafter"], msec[cn["rafter"]], M, **{k: v for k, v in kw.items() if k != "x"}))
     elif typ == "splice":
@@ -81,6 +81,10 @@ for cn in sc.get("connection", []):
         conns.append(CN.cap(nm, L, num(cn["x"]), cn["column"], msec[cn["column"]], msec[cn["rafter"]], M, **{k: v for k, v in kw.items() if k != "x"}))
     elif typ == "base":
         conns.append(CN.base(nm, num(cn["x"]), cn["column"], msec[cn["column"]], M, **{k: v for k, v in kw.items() if k != "x"}))
+    elif typ == "xbrace":
+        conns.append(CN.xbrace(nm, pt(cn["a0"]), pt(cn["a1"]), pt(cn["b0"]), pt(cn["b1"]), vec(cn["normal"]), msec[cn["host"]], cn["section"], M, **kw))
+    elif typ == "strut":
+        conns.append(CN.strut(nm, pt(cn["a"]), pt(cn["b"]), vec(cn["normal"]), vec(cn["along"]), cn["section"], M, **kw))
     elif typ == "wsp":
         ms = next(q for q in sc["member"] if q["name"] == cn["secondary"]); a, b = pt(ms["from"]), pt(ms["to"]); y0 = num(cn["y"])
         if ms.get("align") != "top" or abs(a.x - b.x) > 1e-6: raise ValueError("the secondary must run along y with align = \"top\"")
@@ -125,24 +129,26 @@ purlin_pts = {}
 for pu in sc.get("purlins", []):
   with _at('[[purlins]] name = "%s"' % pu.get("name", "pur")):
     res = A.purlins_on(pu.get("name", "pur"), lines[pu["line"]], num(pu["spacing"]), num(pu["y0"]), num(pu["y1"]), pu["section"], mat(pu.get("material", "light")),
-                       num(pu.get("start", 0.0)), num(pu["until"]) if "until" in pu else None, from_end=pu.get("from_end", False), flip_alternate=pu.get("flip_alternate", False))
+                       num(pu.get("start", 0.0)), num(pu["until"]) if "until" in pu else None, from_end=pu.get("from_end", False), flip_alternate=pu.get("flip_alternate", False), flip=pu.get("flip", False))
     purlin_pts[pu.get("name", "pur")] = [p for p, _ in res]
     NS[pu.get("name", "pur")] = [p for p, _ in res]
-    if pu.get("cleats"): CN.purlin_cleats(pu.get("name", "pur") + "_cl", [p for p, _ in res], pu["section"], lines[pu["line"]], M)
+    if pu.get("cleats"): CN.purlin_cleats(pu.get("name", "pur") + "_cl", [p for p, _ in res], pu["section"], lines[pu["line"]], M, frames=nums(pu.get("cleat_frames", [0.0])), flip=pu.get("flip", False))
     for _, ob in res: B.secondary(ob)
 for gi in sc.get("girts", []):
   with _at('[[girts]] name = "%s"' % gi.get("name", "girt")):
     for _, ob in A.girts_on(gi.get("name", "girt"), num(gi["x"]), nums(gi["levels"]), num(gi["y0"]), num(gi["y1"]), gi["section"], mat(gi.get("material", "light")), vec(gi.get("outward", [-1, 0, 0]))): B.secondary(ob)
+    if "cleat_frames" in gi: CN.girt_cleats(gi.get("name", "girt") + "_cl", num(gi["x"]), nums(gi["levels"]), nums(gi["cleat_frames"]), gi["section"], vec(gi.get("outward", [-1, 0, 0])), M)
 fly_anchors = {}
 for fb in sc.get("fly_brace", []):
     if "purlins" in fb:                                     # built form: against the purlin web, bolt, cleat
         pu = next(x for x in sc["purlins"] if x.get("name", "pur") == fb["purlins"]); L = lines[pu["line"]]
-        pts = purlin_pts[fb["purlins"]]; x0 = pts[0].x if pts else 0.0
+        pts = [p + Vector((0, num(fb.get("y", 0.0)), 0)) for p in purlin_pts[fb["purlins"]]]; x0 = pts[0].x if pts else 0.0
         mp = SEC_DB.profile(members[fb["member"]].name if False else fb["section_of"]) if "section_of" in fb else None
         d_m, b_m = (num(fb["member_depth"]), num(fb["member_bf"])) if "member_depth" in fb else (mp["d"], mp["b"])
         _, fa = A.fly_braces_on(fb.get("name", "fb"), pts, pu["section"], d_m, b_m, mat(fb.get("material", "dark")), mat("dark"),
                                 fb.get("section"), normal=L.normal(x0 + 0.01), which=fb.get("at"), both_sides=fb.get("both_sides", True),
-                                cleat=fb.get("cleat", True), line_tangent=L.tangent(x0 + 0.01), bolt=fb.get("bolt"), reach=num(fb["reach"]) if "reach" in fb else None)
+                                cleat=fb.get("cleat", True), line_tangent=L.tangent(x0 + 0.01) * (-1 if pu.get("flip") else 1), bolt=fb.get("bolt"), reach=num(fb["reach"]) if "reach" in fb else None,
+                                sides=fb.get("sides"), member_tf=mp["tf"] if mp else None, member_tw=mp["tw"] if mp else None)
         fly_anchors.update(fa)
     else:                                                   # legacy: straight angle between two points
         A.fly_brace(fb["name"], pt(fb["flange_pt"]), pt(fb["purlin_pt"]), mat(fb.get("material", "dark")), fb.get("section", "75x75x6 EA"), fb.get("both_sides", True))

@@ -1,0 +1,643 @@
+# Single-storey workshop: 15 m span portal frames at 6 m, three bays (18 m), purlins, girts, fly braces, braced end bay A-B.
+# x across the frame (columns at 0 and 15), y along the building (frames A-D at 0, 6, 12, 18), z up from the top of footing.
+# Eave: rafter top over the column axis at z = 5.0. Pitch 5 deg, ridge at x = 7.5.
+# Connection details follow TTW-00-DR-ST-30201 / 30202 (course drawings); sections are assumed, not designed.
+title = "Single-storey workshop"
+check = true
+
+[[line]]
+name = "roof"
+points = [[0.0, 5.0], [7.5, 5.65616], [15.0, 5.0]]
+
+[[member]]
+name = "cA1"
+section = "410UB53.7"
+from = [0, 0, 0]
+to = [0, 0, 5.6]
+up = [1, 0, 0]
+
+[[member]]
+name = "rA1"
+section = "360UB44.7"
+from = "roof.at(0, 0)"
+to = "roof.at(7.5, 0)"
+up = "roof.normal(1)"
+align = "top"
+
+[[member]]
+name = "cA2"
+section = "410UB53.7"
+from = [15, 0, 0]
+to = [15, 0, 5.6]
+up = [1, 0, 0]
+
+[[member]]
+name = "rA2"
+section = "360UB44.7"
+from = "roof.at(15, 0)"
+to = "roof.at(7.5, 0)"
+up = "roof.normal(14)"
+align = "top"
+
+[[member]]
+name = "cB1"
+section = "410UB53.7"
+from = [0, 6, 0]
+to = [0, 6, 5.6]
+up = [1, 0, 0]
+material = "accent"
+
+[[member]]
+name = "rB1"
+section = "360UB44.7"
+from = "roof.at(0, 6)"
+to = "roof.at(7.5, 6)"
+up = "roof.normal(1)"
+align = "top"
+material = "accent"
+
+[[member]]
+name = "cB2"
+section = "410UB53.7"
+from = [15, 6, 0]
+to = [15, 6, 5.6]
+up = [1, 0, 0]
+material = "accent"
+
+[[member]]
+name = "rB2"
+section = "360UB44.7"
+from = "roof.at(15, 6)"
+to = "roof.at(7.5, 6)"
+up = "roof.normal(14)"
+align = "top"
+material = "accent"
+
+[[member]]
+name = "cC1"
+section = "410UB53.7"
+from = [0, 12, 0]
+to = [0, 12, 5.6]
+up = [1, 0, 0]
+
+[[member]]
+name = "rC1"
+section = "360UB44.7"
+from = "roof.at(0, 12)"
+to = "roof.at(7.5, 12)"
+up = "roof.normal(1)"
+align = "top"
+
+[[member]]
+name = "cC2"
+section = "410UB53.7"
+from = [15, 12, 0]
+to = [15, 12, 5.6]
+up = [1, 0, 0]
+
+[[member]]
+name = "rC2"
+section = "360UB44.7"
+from = "roof.at(15, 12)"
+to = "roof.at(7.5, 12)"
+up = "roof.normal(14)"
+align = "top"
+
+[[member]]
+name = "cD1"
+section = "410UB53.7"
+from = [0, 18, 0]
+to = [0, 18, 5.6]
+up = [1, 0, 0]
+
+[[member]]
+name = "rD1"
+section = "360UB44.7"
+from = "roof.at(0, 18)"
+to = "roof.at(7.5, 18)"
+up = "roof.normal(1)"
+align = "top"
+
+[[member]]
+name = "cD2"
+section = "410UB53.7"
+from = [15, 18, 0]
+to = [15, 18, 5.6]
+up = [1, 0, 0]
+
+[[member]]
+name = "rD2"
+section = "360UB44.7"
+from = "roof.at(15, 18)"
+to = "roof.at(7.5, 18)"
+up = "roof.normal(14)"
+align = "top"
+
+[[connection]]
+type = "knee"
+name = "kA1"
+line = "roof"
+x = 0
+y = 0
+side = 1
+column = "cA1"
+rafter = "rA1"
+
+[[connection]]
+type = "base"
+name = "bA1"
+x = 0
+y = 0
+column = "cA1"
+
+[[connection]]
+type = "knee"
+name = "kA2"
+line = "roof"
+x = 15
+y = 0
+side = -1
+column = "cA2"
+rafter = "rA2"
+
+[[connection]]
+type = "base"
+name = "bA2"
+x = 15
+y = 0
+column = "cA2"
+
+[[connection]]
+type = "splice"
+name = "spA"
+line = "roof"
+x = 7.5
+y = 0
+a = "rA1"
+b = "rA2"
+b_end = "cut1"
+
+[[connection]]
+type = "knee"
+name = "kB1"
+line = "roof"
+x = 0
+y = 6
+side = 1
+column = "cB1"
+rafter = "rB1"
+
+[[connection]]
+type = "base"
+name = "bB1"
+x = 0
+y = 6
+column = "cB1"
+
+[[connection]]
+type = "knee"
+name = "kB2"
+line = "roof"
+x = 15
+y = 6
+side = -1
+column = "cB2"
+rafter = "rB2"
+
+[[connection]]
+type = "base"
+name = "bB2"
+x = 15
+y = 6
+column = "cB2"
+
+[[connection]]
+type = "splice"
+name = "spB"
+line = "roof"
+x = 7.5
+y = 6
+a = "rB1"
+b = "rB2"
+b_end = "cut1"
+
+[[connection]]
+type = "knee"
+name = "kC1"
+line = "roof"
+x = 0
+y = 12
+side = 1
+column = "cC1"
+rafter = "rC1"
+
+[[connection]]
+type = "base"
+name = "bC1"
+x = 0
+y = 12
+column = "cC1"
+
+[[connection]]
+type = "knee"
+name = "kC2"
+line = "roof"
+x = 15
+y = 12
+side = -1
+column = "cC2"
+rafter = "rC2"
+
+[[connection]]
+type = "base"
+name = "bC2"
+x = 15
+y = 12
+column = "cC2"
+
+[[connection]]
+type = "splice"
+name = "spC"
+line = "roof"
+x = 7.5
+y = 12
+a = "rC1"
+b = "rC2"
+b_end = "cut1"
+
+[[connection]]
+type = "knee"
+name = "kD1"
+line = "roof"
+x = 0
+y = 18
+side = 1
+column = "cD1"
+rafter = "rD1"
+
+[[connection]]
+type = "base"
+name = "bD1"
+x = 0
+y = 18
+column = "cD1"
+
+[[connection]]
+type = "knee"
+name = "kD2"
+line = "roof"
+x = 15
+y = 18
+side = -1
+column = "cD2"
+rafter = "rD2"
+
+[[connection]]
+type = "base"
+name = "bD2"
+x = 15
+y = 18
+column = "cD2"
+
+[[connection]]
+type = "splice"
+name = "spD"
+line = "roof"
+x = 7.5
+y = 18
+a = "rD1"
+b = "rD2"
+b_end = "cut1"
+
+[[connection]]
+type = "xbrace"
+name = "xW"
+a0 = "roof.at(0.46, 0) - roof.normal(1) * sec('360UB44.7')['d'] / 2"
+a1 = "roof.at(7.04, 0) - roof.normal(1) * sec('360UB44.7')['d'] / 2"
+b0 = "roof.at(0.46, 6) - roof.normal(1) * sec('360UB44.7')['d'] / 2"
+b1 = "roof.at(7.04, 6) - roof.normal(1) * sec('360UB44.7')['d'] / 2"
+normal = "roof.normal(1)"
+host = "rA1"
+section = "75x75x6 EA"
+
+[[connection]]
+type = "strut"
+name = "stxW"
+a = "roof.at(7.04, 0) - roof.normal(1) * sec('360UB44.7')['d'] / 2"
+b = "roof.at(7.04, 6) - roof.normal(1) * sec('360UB44.7')['d'] / 2"
+normal = "roof.normal(1)"
+along = "roof.tangent(1)"
+section = "114.3x3.2CHS"
+
+[[connection]]
+type = "xbrace"
+name = "xE"
+a0 = "roof.at(14.54, 0) - roof.normal(14) * sec('360UB44.7')['d'] / 2"
+a1 = "roof.at(7.96, 0) - roof.normal(14) * sec('360UB44.7')['d'] / 2"
+b0 = "roof.at(14.54, 6) - roof.normal(14) * sec('360UB44.7')['d'] / 2"
+b1 = "roof.at(7.96, 6) - roof.normal(14) * sec('360UB44.7')['d'] / 2"
+normal = "roof.normal(14)"
+host = "rA1"
+section = "75x75x6 EA"
+
+[[connection]]
+type = "strut"
+name = "stxE"
+a = "roof.at(7.96, 0) - roof.normal(14) * sec('360UB44.7')['d'] / 2"
+b = "roof.at(7.96, 6) - roof.normal(14) * sec('360UB44.7')['d'] / 2"
+normal = "roof.normal(14)"
+along = "roof.tangent(14)"
+section = "114.3x3.2CHS"
+
+[[connection]]
+type = "xbrace"
+name = "wW"
+a0 = [0, 0, 0.5]
+a1 = [0, 0, 4.4]
+b0 = [0, 6, 0.5]
+b1 = [0, 6, 4.4]
+normal = [1, 0, 0]
+host = "cA1"
+section = "75x75x6 EA"
+
+[[connection]]
+type = "strut"
+name = "stwW"
+a = [0, 0, 4.4]
+b = [0, 6, 4.4]
+normal = [1, 0, 0]
+along = [0, 0, 1]
+section = "114.3x3.2CHS"
+
+[[connection]]
+type = "xbrace"
+name = "wE"
+a0 = [15, 0, 0.5]
+a1 = [15, 0, 4.4]
+b0 = [15, 6, 0.5]
+b1 = [15, 6, 4.4]
+normal = [1, 0, 0]
+host = "cA1"
+section = "75x75x6 EA"
+
+[[connection]]
+type = "strut"
+name = "stwE"
+a = [15, 0, 4.4]
+b = [15, 6, 4.4]
+normal = [1, 0, 0]
+along = [0, 0, 1]
+section = "114.3x3.2CHS"
+
+[[purlins]]
+name = "pW"
+line = "roof"
+spacing = 1.16
+start = 0.33
+until = 7.3
+y0 = -0.15
+y1 = 18.15
+section = "Z20015"
+cleats = true
+cleat_frames = [0, 6, 12, 18]
+
+[[purlins]]
+name = "pE"
+line = "roof"
+spacing = 1.16
+start = 0.33
+until = 7.3
+y0 = -0.15
+y1 = 18.15
+section = "Z20015"
+from_end = true
+flip = true
+cleats = true
+cleat_frames = [0, 6, 12, 18]
+
+[[girts]]
+name = "gW"
+x = -0.2013
+levels = [1.4, 2.8, 4.2]
+y0 = -0.15
+y1 = 18.15
+section = "Z20015"
+outward = [-1, 0, 0]
+cleat_frames = [0, 6, 12, 18]
+
+[[girts]]
+name = "gE"
+x = 15.2013
+levels = [1.4, 2.8, 4.2]
+y0 = -0.15
+y1 = 18.15
+section = "Z20015"
+outward = [1, 0, 0]
+cleat_frames = [0, 6, 12, 18]
+
+[[fly_brace]]
+name = "fpWA"
+purlins = "pW"
+at = [1, 3, 5]
+y = 0
+sides = [1]
+section_of = "360UB44.7"
+
+[[fly_brace]]
+name = "fpWB"
+purlins = "pW"
+at = [1, 3, 5]
+y = 6
+sides = [-1, 1]
+section_of = "360UB44.7"
+
+[[fly_brace]]
+name = "fpWC"
+purlins = "pW"
+at = [1, 3, 5]
+y = 12
+sides = [-1, 1]
+section_of = "360UB44.7"
+
+[[fly_brace]]
+name = "fpWD"
+purlins = "pW"
+at = [1, 3, 5]
+y = 18
+sides = [-1]
+section_of = "360UB44.7"
+
+[[fly_brace]]
+name = "fpEA"
+purlins = "pE"
+at = [1, 3, 5]
+y = 0
+sides = [1]
+section_of = "360UB44.7"
+
+[[fly_brace]]
+name = "fpEB"
+purlins = "pE"
+at = [1, 3, 5]
+y = 6
+sides = [-1, 1]
+section_of = "360UB44.7"
+
+[[fly_brace]]
+name = "fpEC"
+purlins = "pE"
+at = [1, 3, 5]
+y = 12
+sides = [-1, 1]
+section_of = "360UB44.7"
+
+[[fly_brace]]
+name = "fpED"
+purlins = "pE"
+at = [1, 3, 5]
+y = 18
+sides = [-1]
+section_of = "360UB44.7"
+
+[anchors]
+ref_knee = [0.0, 6.0, 4.9]
+gA = [-2.2, 0, 0]
+gB = [-2.2, 6, 0]
+gC = [-2.2, 12, 0]
+gD = [-2.2, 18, 0]
+g1 = [0, -1.8, 0]
+g2 = [15, -1.8, 0]
+col_k = [0.2013, 5.93, 4.0]
+raf_k = "roof.at(1.62, 6) - roof.normal(1) * 0.2 + V(0, -0.004, 0)"
+pur_k = "pW[0] + V(0, 5.1, 0.12)"
+brace_k = [0.01, 5.0, 3.75]
+strut_k = [0.02, 5.2, 4.45]
+
+[[dim]]
+name = "span"
+a = [0, 0, 0]
+b = [15, 0, 0]
+off = [0, -1.25, 0]
+
+[[dim]]
+name = "bay"
+a = [0, 0, 0]
+b = [0, 6, 0]
+off = [-1.5, 0, 0]
+
+[[dim]]
+name = "eave"
+a = [0, 0, 0]
+b = [0, 0, 5]
+off = [0, -0.85, 0]
+
+[[dim]]
+name = "plate"
+a = [0.2213, 5.9045, 5.10436]
+b = [0.2213, 5.9045, 4.58102]
+off = [0, -0.16, 0]
+
+[[dim]]
+name = "fly1"
+a = "roof.along(0.22215, 6) - roof.normal(1) * 0.352 + V(0, -0.0855, 0)"
+b = "pW[1] + V(0, 6, 0) - roof.normal(1) * 0.352 + V(0, -0.0855, 0)"
+off = "-roof.normal(1) * 0.3"
+
+[[view]]
+name = "ws_overall"
+auto = { focus = ["rB1", "rB2", "cB1", "cB2"], dir = [-0.8, -1, 0.5], lens = 50, fill = 0.9 }
+width_cm = 13.5
+caption = "Overview, braced bay A-B nearest"
+bounds = ["gA", "gD", "g1", "g2"]
+draw = [["dim3", "span", "15000", "below"], ["dim3", "bay", "6000", "below"], ["dim3", "eave", "5000", "above"],
+  ["grid", "gA", "A"], ["grid", "gB", "B"], ["grid", "gC", "C"], ["grid", "gD", "D"], ["grid", "g1", "1"], ["grid", "g2", "2"],
+  ["letter", "ref_knee", "b", -0.9, 1.0]]
+  [[view.label]]
+  anchor = "m.cB1"
+  text = "410UB53.7 column"
+  [[view.label]]
+  anchor = "m.rB1"
+  text = "360UB44.7 rafter"
+  [[view.label]]
+  anchor = "m.pW5"
+  text = "Z20015 purlin at 1160"
+  [[view.label]]
+  anchor = "m.gW0"
+  text = "Z20015 girt at 1400"
+  [[view.label]]
+  anchor = "wW.d2"
+  text = "75x75x6 EA X bracing, walls and roof, bay A-B"
+  dx = 0.4
+  dy = -1.5
+  [[view.label]]
+  anchor = "m.stwW"
+  text = "114.3x3.2 CHS strut, wall tops and ridge"
+  [[view.label]]
+  anchor = "spB.ep"
+  text = "Ridge: two bolted end plates"
+  [[view.label]]
+  anchor = "bB1.bp"
+  text = "Pinned base plate on footing"
+
+[[view]]
+name = "ws_knee"
+camera = [3.4, 3.1, 3.2, 0.75, 5.8, 4.75, 40]
+crop = [[-0.214, 4.855, 3.7], [1.714, 6.745, 5.8]]
+width_cm = 10.5
+caption = "Knee of frame B, from inside the braced bay"
+draw = [["dim3", "plate", "523", "below"], ["dim3", "fly1", "1268", "below"]]
+  [[view.label]]
+  anchor = "col_k"
+  text = ""
+  num = 1
+  [[view.label]]
+  anchor = "raf_k"
+  text = ""
+  num = 2
+  [[view.label]]
+  anchor = "pur_k"
+  text = ""
+  num = 3
+  [[view.label]]
+  anchor = "brace_k"
+  text = ""
+  num = 5
+  [[view.label]]
+  anchor = "strut_k"
+  text = ""
+  num = 6
+  [[view.label]]
+  anchor = "kB1.ep"
+  text = "20 mm end plate"
+  dx = 1.6
+  dy = -1.0
+  [[view.label]]
+  anchor = "kB1.bolt"
+  text = "8 M20 8.8/S bolts"
+  [[view.label]]
+  anchor = "kB1.stiff"
+  text = "12 mm column stiffeners"
+  dx = -1.9
+  dy = 0.9
+  [[view.label]]
+  anchor = "xW.b0_gusset"
+  text = "12 mm gusset, 10 mm web stiffeners"
+  [[view.label]]
+  anchor = "xW.b0_bolt"
+  text = "3 M24 8.8/S, 240x90x12 cleat plate"
+  [[view.label]]
+  anchor = "stwW.b_bolt"
+  text = "2 M20 8.8/S, strut plate on the gusset"
+  [[view.label]]
+  anchor = "fpWB1-1"
+  text = "50x50x3 EA fly brace, alternate purlins"
+  [[view.label]]
+  anchor = "fpWB1-1_cleat"
+  text = "8 mm fly brace cleat"
+
+[figure]
+name = "workshop"
+width_cm = 15
+layout = "stack"
+key_cols = 2
+key_extra = ["Illustrative, not designed: sections, 5000 eave, 5 deg pitch and no haunch are assumed. Sheeting, end walls and purlin laps not shown."]

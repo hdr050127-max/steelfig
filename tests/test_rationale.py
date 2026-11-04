@@ -11,7 +11,7 @@ class Rationale(unittest.TestCase):
         self.assertTrue(RA.check(True, "fb", "ok", "edge")); self.assertFalse(RA.check(False, "fb bolt", "too close", "edge"))
         with tempfile.TemporaryDirectory() as tmp:
             p = os.path.join(tmp, "r.md"); text = RA.dump(p, "t")
-            self.assertIn("ASSUMPTION", text); self.assertIn("AS 4100 Cl 9.6.2", text); self.assertIn("too close", text)
+            self.assertIn("ASSUMPTION", text); self.assertIn("AS 4100:2020 Table 9.5.2", text); self.assertIn("too close", text)
             self.assertTrue(os.path.exists(p))
 
 

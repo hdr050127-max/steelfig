@@ -14,3 +14,4 @@ the style sheet, or a generator). A correction that is not written down will be 
 | 2026-11-04 | user | steel should look like steel, not a white model; grades may differ | style finishes by product type |
 | 2026-11-04 | user | figures came with many sub-views nobody asked for; our own judgement must be stated before it is drawn | figure-brief.md: one view by default, extra views justified and asked |
 | 2026-11-04 | user | after the model is built, show the plain render for a geometry check before any annotation | build --plain, SKILL.md step 2 checkpoint |
+| 2026-11-04 | user | fly brace: the lower end and cleat hung below the rafter bottom flange, marked on the render as wrong | fly_braces_on rebuilt from TTW ST-30202: cleat in the web-flange corner, 45 deg, bolts on the leg centre line; docs/details/fly_brace.md |

@@ -1,10 +1,9 @@
 # Purlin cleat
 
-**Parts**: plate cleat welded to the rafter top flange under each purlin; two bolts through the purlin web.
-**Rules**: cleat 100 wide × 0.6 × purlin depth × 8 mm, on the downslope face of the web; bolts at 30 % and 70 % of
-the cleat height (ASSUMPTION; manufacturers give cleat length and bolt spacing per purlin size).
-**Sources**: Stramit Detailing & Installation Guide, "Cleat Nominal Dimensions" (see `sources/stramit-guide.md`,
-fetched 2026-11-04): 250 series cleat 60 wide × 245 high × 8 mm, holes 18 mm (M16) at 55 and 215 above the base;
-ASI TN003 Cleats.
-**To verify**: nothing on dimensions; the generator still uses the older proportional rule until it is updated to
-this table (connections worktree).
+**Parts**: plate cleat welded to the rafter top flange under each purlin; two M12 4.6/S through the purlin web.
+**Rules**: from TTW-00-DR-ST-30202 Purlin Cleats table: 75x8 plate for H up to 250, 75x10 to 350, 75x12 below 500,
+75x75x5 EA above. Height and hole positions from the Stramit cleat table: Y = depth - 5, holes at B = 55 and B + X (X = depth - 90) for
+150-250 series, B = 65 for 300/350. On the flange-free face of the web.
+**Sources**: TTW drawing above; Stramit guide (`sources/stramit-guide.md`), which itself gives 60 wide and M16 (M20 for
+300/350). The two disagree on width and bolt: the course drawing's values are used and the difference is reported.
+**To verify**: which face of the web TTW intends (the drawing is an elevation).

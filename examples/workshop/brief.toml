@@ -1,0 +1,5 @@
+figure = "workshop"
+parts = ["410UB53.7 column", "360UB44.7 rafter", "Z20015 purlin", "Z20015 girt", "fly brace", "75x75x6 EA", "114.3x3.2 CHS", "end plate", "gusset"]
+dims = ["15000", "6000", "5000", "523", "1268"]
+views = ["ws_overall", "ws_knee"]
+assumptions = ["sections", "eave height and pitch", "no haunch", "purlin spacing 1160", "bracing plane at mid-depth"]

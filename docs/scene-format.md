@@ -53,6 +53,13 @@ per_frame = false
 [[connection]]  type = "splice" name = "s"  line = "roof"  x = 6.278  a = "haunch"  b = "rafter"
 [[connection]]  type = "cap"    name = "c"  line = "roof"  x = 21.993  column = "colB"  rafter = "haunchB"  [y = 0.0]
 [[connection]]  type = "base"   name = "b"  x = 0.0  column = "col"  [y = 0.0  z0 = 0.0  plate_t  grout  bolt = "M24"]
+[[connection]]  type = "knee"  … [y = 6.0  side = -1]                  # y: frame position; side = -1 when the rafter runs towards -x
+[[connection]]  type = "splice" … [y = 6.0  b_end = "cut1"]             # b_end: b is declared running towards x (rafter from its knee to the ridge)
+[[connection]]  type = "xbrace" name = "x"  a0  a1  b0  b1  normal  host = "col"  section = "75x75x6 EA"
+      # X of angles between work points a0, a1 on one frame and b0, b1 on the next (on the host web at mid-depth): gussets, cleat
+      # plates, bolts from the TTW table, web stiffeners, pack and bolt at the crossing. Anchors: x.a0_gusset x.a0_cleat x.a0_bolt … x.cross
+[[connection]]  type = "strut"  name = "st" a  b  normal  along  section = "114.3x3.2CHS"
+      # CHS strut type A between the gussets at two work points of an xbrace; along = the host member's direction. Anchors: st.a_end st.a_bolt …
 [[connection]]  type = "wsp"    name = "w"  y = 0.0  primary = "pri"  secondary = "sec"
       # web side plate: a PFC running along y (align = "top", member line on the web back face, flip for the toes) into
       # the web of a primary along x at y; top flush, flanges and top of web coped. Anchors: w.fin w.bolt w.cope w.web.
@@ -62,7 +69,9 @@ per_frame = false
       # k.ep k.bolt k.bolt2 k.stiff k.face | s.ep s.bolt s.bolt2 s.face | c.capp c.bolt c.ws c.col | b.bp b.ab b.ab2 b.grout b.foot b.col
       # extra keys: ep_t ep_ext bolt bolt_in row_off stiff_t cap_t plate_t grout footing bolts_in — when left out they
       # scale with the member depth (connections.defaults: M16/16 plate under 320, M20/20 to 470, M24/25 to 620, M24/32 above)
-[[purlins]] … cleats = true                 # angle cleat + two bolts under every purlin
+[[purlins]] … cleats = true  [cleat_frames = [0, 6, 12]  flip = true]  # plate cleat + two bolts under every purlin at each frame; flip on the slope where the line runs downhill
+[[girts]] … [cleat_frames = [0, 6, 12]]    # plate cleat + two bolts at the column flange
+[[fly_brace]] … [y = 6.0  sides = [1]]     # the frame it belongs to; which sides of the rafter (an end frame has purlins beyond it on one side only)
 [[fly_brace]]  purlins = "pur"  at = [1, 3]  member_depth = "sec('410UB59.7')['d']"  member_bf = "sec('410UB59.7')['b']"
                section = "75x75x6 EA"  both_sides = true  cleat = true     # against the purlin web, cut under the top flange
 check = true           # top level: report solids passing through each other (> check_min_cm3, default 5 cm3)
@@ -127,7 +136,7 @@ distance and a mismatch is printed as a WARNING. A 2D `dim` on a perspective vie
 Every connection and fly brace generator records its decisions with the rule and the source (an AS 4100 clause,
 a catalogue, a standard detail, or ASSUMPTION when it is only common practice): `out/<figure>_rationale.md`,
 one line per decision, plus the realism checks that failed (`REALISM …` lines in the build output: bolt edge
-distances and pitch to AS 4100 Cl 9.6, brace angle 35-55°, nut on the open face, cleat bolt edge distance). Put
+distances and pitch to AS 4100:2020 Cl 9.5, brace angle 35-55°, nut on the open face, cleat bolt edge distance). Put
 the relevant lines in the figure's key or caption, and treat an ASSUMPTION entry as something to confirm before
 the figure is quoted as a detail.
 

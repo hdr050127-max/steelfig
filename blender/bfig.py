@@ -713,7 +713,9 @@ def wave(p, q, amp, side, n=20):
 def _id_colour(i):
     """index 1.. -> distinct sRGB colour (1575 ids), returned as (sRGB tuple, linear rgba). Never black, which is what a
     transparent background reads as; blue steps of 34 because readers compare colours by luminance (weight 0.114)."""
-    i = int(i) - 1; r, g, b = (i % 15 + 1) * 17, ((i // 15) % 15 + 1) * 17, ((i // 225) % 7 + 1) * 34
+    i = int(i) - 1
+    if i >= 1575: raise ValueError("more than 1575 objects in the scene: the ID render cannot tell them apart")
+    r, g, b = (i % 15 + 1) * 17, ((i // 15) % 15 + 1) * 17, ((i // 225) % 7 + 1) * 34
     lin = lambda c: (c / 255) / 12.92 if c / 255 <= 0.04045 else (((c / 255) + 0.055) / 1.055) ** 2.4
     return (r, g, b), (lin(r), lin(g), lin(b), 1.0)
 
