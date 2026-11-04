@@ -46,6 +46,16 @@ class Overlay(unittest.TestCase):
             self.assertTrue(near(im.getpixel((30, 10)), (200, 200, 200)), im.getpixel((30, 10)))  # the other object: untouched
             self.assertTrue(P.png.endswith("v_hl.jpg"))
 
+    def test_preview_relative_out_dir(self):
+        """a relative out_dir (steelfig build ... --report rep) must not be resolved twice when cwd is also set."""
+        with tempfile.TemporaryDirectory() as tmp:
+            rep = os.path.join(tmp, "rep"); os.makedirs(rep)
+            old = os.getcwd(); os.chdir(tmp)
+            try: pdf = O.preview("x", os.path.join("rep", "preview"), "t", cwd="rep")
+            finally: os.chdir(old)
+            self.assertTrue(os.path.isabs(pdf))
+            self.assertTrue(os.path.exists(pdf))
+
 
 if __name__ == "__main__":
     unittest.main()

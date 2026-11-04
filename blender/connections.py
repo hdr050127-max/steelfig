@@ -154,7 +154,7 @@ def base(name, x, col, col_sec, M, z0=0.0, plate_t=None, grout=0.040, bolt=None,
            "pinned base: bolts inside the flanges give little moment capacity; grout takes the levelling tolerance", "ttw")
 
     def build():
-        B.plate(name + "_foot", Vector((x + 0.05, 0, z0 - footing[2] / 2 - 0.0)), X, Y, footing, M["conc"])
+        B.plate(name + "_foot", Vector((x, 0, z0 - footing[2] / 2 - 0.0)), X, Y, footing, M["conc"])
         objs, top = B_base(name, Vector((x, 0, z0)), (dC + 0.14, bfC + 0.10), plate_t, M, grout, bolts=[(sx * (dC / 2 - bolts_in), sy * 0.06) for sx in (-1, 1) for sy in (-1, 1)],
                            bolt_dia=SEC_DB.bolt(bolt)["d"])
         anchors.update(bp=(x + dC / 2 + 0.05, -bfC / 2 - 0.05, z0 + grout + plate_t / 2), ab=(x + dC / 2 - bolts_in, -0.06, top.z + 0.03), ab2=(x - dC / 2 + bolts_in, -0.06, top.z + 0.03),
